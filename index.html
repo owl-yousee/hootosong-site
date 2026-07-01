@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#171420">
-  <title>Hooto - 歌枠マネージャー</title>
+  <title>Hooto - 楽曲管理メモ</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body data-ui-mode="desktop">
@@ -13,7 +13,7 @@
   <header class="site-header">
     <a class="brand" href="#" aria-label="Hooto ホーム">
       <span class="mini-owl" aria-hidden="true"><img class="owl-art owl-art-icon" src="assets/hooto-owl-icon.png" alt="" onload="this.parentElement.classList.add('has-owl-image')" onerror="this.remove()"><i></i></span>
-      <span><strong>Hooto</strong><small>歌枠マネージャー</small></span>
+      <span><strong>Hooto</strong><small>楽曲管理メモ</small></span>
     </a>
     <div class="header-actions">
       <button id="remoteModeButton" class="header-tab-link" type="button"><span aria-hidden="true">📱</span><b>リモコン</b></button>
@@ -43,20 +43,20 @@
       <div class="history-hero">
         <button id="backToSongs" class="back-button" type="button">← 曲一覧へ戻る</button>
         <span class="eyebrow">STREAM ARCHIVE</span>
-        <div class="history-title-row"><div><h1>過去の歌枠</h1><p>思い出のセトリを、日付ごとに振り返ろう。</p></div><div class="archive-owl" aria-hidden="true">◉▽◉</div></div>
+        <div class="history-title-row"><div><h1>保存メモ</h1><p>保存したセトリを、日付ごとに振り返ろう。</p></div><div class="archive-owl" aria-hidden="true">◉▽◉</div></div>
       </div>
       <div class="new-stream-bar">
-        <div><strong>歌枠を作成</strong><span>日付だけ先に登録できます</span></div>
-        <label><span class="sr-only">歌枠の日付</span><input id="streamDate" type="date"></label>
+        <div><strong>メモを作成</strong><span>日付だけ先に登録できます</span></div>
+        <label><span class="sr-only">メモの日付</span><input id="streamDate" type="date"></label>
         <button id="createStream" type="button">＋ この日で作成</button>
       </div>
-      <div class="archive-heading"><h2>歌枠アーカイブ</h2><span id="archiveCount">0 streams</span></div>
+      <div class="archive-heading"><h2>保存メモ</h2><span id="archiveCount">0 streams</span></div>
       <div id="historyList" class="history-list"></div>
-      <div id="historyEmpty" class="empty-state"><div class="empty-owl">◉v◉</div><h3>まだ歌枠がありません</h3><p>曲の「歌った！」を押すと、今日のセトリが自動で作られます。</p></div>
+      <div id="historyEmpty" class="empty-state"><div class="empty-owl">◉v◉</div><h3>まだ保存メモがありません</h3><p>曲の「歌った！」を押すと、今日のセトリが自動で作られます。</p></div>
     </section>
 
     <section id="draftsView" class="workspace-view" hidden>
-      <div class="workspace-hero"><button class="back-button" data-back-home type="button">← TOPへ戻る</button><span class="eyebrow">SETLIST IDEAS</span><div><div><h1>セトリ案</h1><p>歌枠前の候補セトリを保存しておけます。</p></div><div class="archive-owl" aria-hidden="true">◉✎◉</div></div></div>
+      <div class="workspace-hero"><button class="back-button" data-back-home type="button">← TOPへ戻る</button><span class="eyebrow">SETLIST IDEAS</span><div><div><h1>セトリ案</h1><p>次回用の候補セトリを保存しておけます。</p></div><div class="archive-owl" aria-hidden="true">◉✎◉</div></div></div>
       <div class="draft-help"><div><strong>セトリ案の作り方</strong><span>今日のセトリ画面で曲やメモを整えて「セトリ案に保存」を押すと、ここに候補として保存されます。</span></div><button id="openSetlistFromDrafts" type="button">＋ 今日のセトリで作る</button></div>
       <div class="archive-heading"><h2>保存済みセトリ案</h2><span id="draftArchiveCount">0 ideas</span></div>
       <div id="draftList" class="draft-list"></div>
@@ -66,8 +66,8 @@
     <section id="setlistView" class="workspace-view" hidden>
       <div class="workspace-hero"><button class="back-button" data-back-home type="button">← TOPへ戻る</button><span class="eyebrow">TODAY'S SETLIST</span><div><div><h1>今日のセトリ</h1><p id="setlistDateLabel"></p></div><div class="archive-owl" aria-hidden="true">◉♪◉</div></div></div>
       <div class="setlist-info-panel">
-        <label><span>セトリ名</span><input id="setlistName" type="text" placeholder="例：初夏のアニソン歌枠"></label>
-        <label><span>配信タイトル</span><input id="setlistStreamTitle" type="text" placeholder="例：【歌枠】今夜は元気に歌う！"></label>
+        <label><span>セトリ名</span><input id="setlistName" type="text" placeholder="例：初夏のアニソンメモ"></label>
+        <label><span>メモタイトル</span><input id="setlistStreamTitle" type="text" placeholder="例：今夜歌いたい曲"></label>
         <label class="wide"><span>メモ</span><textarea id="setlistMemo" rows="3" placeholder="MCの流れ、注意点、次回へのメモなど"></textarea></label>
       </div>
       <div id="draftEditNotice" class="draft-edit-notice" hidden><span>✎</span><strong>セトリ案編集中</strong><small id="draftEditName"></small><button id="cancelDraftEdit" type="button">編集をやめる</button></div>
@@ -452,7 +452,7 @@
     </form>
   </dialog>
   <dialog id="deleteDialog" class="delete-dialog">
-    <div class="delete-icon" aria-hidden="true">!</div><span>DELETE SONG</span><h2>この曲を削除しますか？</h2><p id="deleteSongName"></p><small>この操作は元に戻せません。過去の歌枠に保存済みの記録は残ります。</small><div><button id="cancelDelete" type="button">キャンセル</button><button id="confirmDelete" type="button">削除する</button></div>
+    <div class="delete-icon" aria-hidden="true">!</div><span>DELETE SONG</span><h2>この曲を削除しますか？</h2><p id="deleteSongName"></p><small>この操作は元に戻せません。過去の保存メモに保存済みの記録は残ります。</small><div><button id="cancelDelete" type="button">キャンセル</button><button id="confirmDelete" type="button">削除する</button></div>
   </dialog>
   <dialog id="deleteDraftDialog" class="delete-dialog">
     <div class="delete-icon" aria-hidden="true">!</div><span>DELETE SETLIST IDEA</span><h2>このセトリ案を削除しますか？</h2><p id="deleteDraftName"></p><small>この操作は元に戻せません。今日のセトリや過去のセトリは削除されません。</small><div><button id="cancelDraftDelete" type="button">キャンセル</button><button id="confirmDraftDelete" type="button">削除する</button></div>
@@ -476,7 +476,7 @@
       </div>
       <div class="setlist-target-section">
         <h3>新しいセトリ案</h3>
-        <label class="field"><span>セトリ案名</span><input id="setlistTargetNewDraftName" type="text" placeholder="例：次回歌枠候補"></label>
+        <label class="field"><span>セトリ案名</span><input id="setlistTargetNewDraftName" type="text" placeholder="例：次回の候補メモ"></label>
         <button id="setlistTargetCreateDraftButton" class="setlist-target-main" type="button">作成して追加</button>
       </div>
       <div class="form-actions"><button id="cancelSetlistTarget" type="button">キャンセル</button></div>
