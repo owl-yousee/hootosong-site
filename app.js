@@ -962,14 +962,14 @@ async function createSupabasePairingCode(){
       return null;
     }
     const workspaceId=await workspaceIdForSupabaseDataSync(client,user);
-    const {data,error}=await client.rpc("create_app_pairing_code",{target_workspace_id:workspaceId,valid_minutes:10});
+    const {data,error}=await client.rpc("create_app_pairing_code",{target_workspace_id:workspaceId,valid_minutes:30});
     if(error)throw error;
     const row=firstSupabaseRpcRow(data);
     const code=typeof row==="string"?row:pickSupabaseField(row,["code","pairing_code","app_pairing_code","pairingCode"]);
     const expiresAt=pickSupabaseField(row,["expires_at","expiresAt","valid_until","validUntil"]);
     if(!code)throw new Error("ペアリングコードが返りませんでした。");
     if(els.supabasePairingCodeOutput)els.supabasePairingCodeOutput.textContent=code;
-    if(els.supabasePairingExpiresOutput)els.supabasePairingExpiresOutput.textContent="有効期限："+formatSupabaseDateTime(expiresAt);
+    if(els.supabasePairingExpiresOutput)els.supabasePairingExpiresOutput.textContent="有効期限：約30分（"+formatSupabaseDateTime(expiresAt)+"）";
     setSupabasePairingStatus("ペアリングコード発行成功：iPhone子機で入力してください。","success");
     console.info("HootoSong pairing code created:",{workspaceId,code,expiresAt});
     return {code,expiresAt};
