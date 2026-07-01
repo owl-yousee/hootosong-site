@@ -391,6 +391,16 @@ button.data-card:hover,label.data-card:hover { color:var(--accent); border-color
 .supabase-pairing-group button:disabled { opacity:.55; cursor:wait; }
 .supabase-pairing-group output { min-height:42px; display:flex; align-items:center; padding:9px 11px; color:var(--text); background:var(--panel); border:1px solid rgba(var(--accent-rgb),.28); border-radius:10px; font-size:18px; font-weight:900; line-height:1.2; word-break:break-word; }
 .supabase-pairing-panel > .supabase-connection-status { grid-column:1/-1; width:100%; box-sizing:border-box; }
+.supabase-today-panel { display:grid; gap:10px; margin-top:12px; padding:12px; background:var(--bg); border:1px solid var(--line); border-radius:12px; }
+.supabase-today-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:start; }
+.supabase-today-head strong,.supabase-today-head span { display:block; }
+.supabase-today-head strong { color:var(--accent); font-size:11px; }
+.supabase-today-head span { color:var(--muted); font-size:9px; line-height:1.55; }
+.supabase-today-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.supabase-today-actions button { min-height:40px; padding:0 14px; color:#372430; background:var(--accent); border:0; border-radius:10px; font-size:10px; font-weight:800; }
+.supabase-today-actions button:nth-child(2) { color:var(--accent); background:rgba(var(--accent-rgb),.16); border:1px solid rgba(var(--accent-rgb),.36); }
+.supabase-today-actions button:disabled { opacity:.55; cursor:wait; }
+.supabase-today-preview { min-height:150px; max-height:300px; overflow:auto; margin:0; padding:12px; color:var(--text); background:var(--panel); border:1px solid var(--line); border-radius:11px; font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; white-space:pre-wrap; word-break:break-word; }
 .settings-debug-panel { margin:12px 0 0; background:var(--bg); }
 .settings-theme-panel .theme-label:first-of-type { margin-top:6px; }
 .settings-theme-panel .mode-switch { max-width:420px; }
@@ -658,6 +668,9 @@ html[data-mode="light"] .data-card,html[data-mode="light"] .setlist-toolbar,html
   .supabase-sync-actions { align-items:stretch; }
   .supabase-sync-actions button,.supabase-connection-status { width:100%; min-width:0; }
   .supabase-pairing-panel { grid-template-columns:1fr; }
+  .supabase-today-head { grid-template-columns:1fr; }
+  .supabase-today-actions { justify-content:stretch; }
+  .supabase-today-actions button { width:100%; }
   .app-info-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
   .app-info-grid div { min-height:64px; padding:11px; }
   .diagnostic-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }

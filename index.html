@@ -267,6 +267,27 @@
           </div>
           <div id="supabasePairingStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">ペアリング未実行</div>
         </div>
+        <div class="supabase-today-panel">
+          <div class="supabase-today-head">
+            <div>
+              <strong>todaySetlist 手動同期</strong>
+              <span>PC親機からアップロードし、子機側では読み込み確認だけ行います。</span>
+            </div>
+            <div class="supabase-today-actions">
+              <button id="uploadSupabaseTodaySetlistButton" type="button">今日のセトリをSupabaseへアップロード</button>
+              <button id="previewSupabaseTodaySetlistButton" type="button">今日のセトリをSupabaseから読み込み確認</button>
+            </div>
+          </div>
+          <div class="supabase-sync-note">
+            <strong>todaySetlist 注意</strong>
+            <span>まだ自動同期ではありません。</span>
+            <span>読み込み確認ではlocalStorageへ反映しません。</span>
+            <span>空データで上書きしないため、アップロード前に内容を確認してください。</span>
+          </div>
+          <div id="supabaseTodaySetlistStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">todaySetlist 未実行</div>
+          <div id="supabaseTodaySetlistMeta" class="supabase-connection-status is-idle">revision / updated_at 未取得</div>
+          <pre id="supabaseTodaySetlistPreview" class="supabase-today-preview" aria-label="todaySetlist 読み込みプレビュー">読み込みプレビューはまだありません。</pre>
+        </div>
       </section>
 
       <section id="themePanel" class="settings-section settings-theme-panel" aria-label="テーマ設定">
