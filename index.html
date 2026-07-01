@@ -287,6 +287,16 @@
           <div id="supabaseTodaySetlistStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">todaySetlist 未実行</div>
           <div id="supabaseTodaySetlistMeta" class="supabase-connection-status is-idle">revision / updated_at 未取得</div>
           <pre id="supabaseTodaySetlistPreview" class="supabase-today-preview" aria-label="todaySetlist 読み込みプレビュー">読み込みプレビューはまだありません。</pre>
+          <div class="supabase-sync-note">
+            <strong>反映前の確認</strong>
+            <span>現在の今日のセトリを、Supabaseから読み込んだ内容で置き換えます。</span>
+            <span>必要なら先にバックアップ保存してください。</span>
+            <span>自動同期ではありません。</span>
+          </div>
+          <div class="supabase-today-apply">
+            <button id="applySupabaseTodaySetlistButton" type="button" disabled>このプレビューを今日のセトリへ反映</button>
+            <div id="supabaseTodaySetlistApplyStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">反映未実行</div>
+          </div>
         </div>
       </section>
 

@@ -30,7 +30,7 @@ const els = {
   singRecordDialog:$("#singRecordDialog"), singRecordForm:$("#singRecordForm"), singRecordSongLabel:$("#singRecordSongLabel"), singRecordSongIndex:$("#singRecordSongIndex"), singRecordType:$("#singRecordType"), singRecordKaraoke:$("#singRecordKaraoke"), singRecordMemo:$("#singRecordMemo"),
   songsTabView:$("#songsTabView"), logsTabView:$("#logsTabView"), settingsTabView:$("#settingsTabView"), bottomTabs:document.querySelectorAll("[data-bottom-tab]"),
   remoteView:$("#remoteView"), remoteModeButton:$("#remoteModeButton"), remoteSetlistCount:$("#remoteSetlistCount"), remoteSetlistSummary:$("#remoteSetlistSummary"), remoteSetlistList:$("#remoteSetlistList"), remoteSetlistEmpty:$("#remoteSetlistEmpty"), remoteCommitSetlist:$("#remoteCommitSetlist"), remoteLogCount:$("#remoteLogCount"), remoteLogList:$("#remoteLogList"), remoteLogToggle:$("#remoteLogToggle"), remoteLogEmpty:$("#remoteLogEmpty"), remoteRandomResult:$("#remoteRandomResult"), remoteSangDialog:$("#remoteSangDialog"), remoteSangDialogTitle:$("#remoteSangDialogTitle"), remoteSangDialogArtist:$("#remoteSangDialogArtist"), remoteSangDialogKey:$("#remoteSangDialogKey"), remoteSangWarning:$("#remoteSangWarning"),
-  supabaseUrlInput:$("#supabaseUrlInput"), supabaseKeyInput:$("#supabaseKeyInput"), testSupabaseConnectionButton:$("#testSupabaseConnectionButton"), testSupabaseStateButton:$("#testSupabaseStateButton"), supabaseAnonymousLoginButton:$("#supabaseAnonymousLoginButton"), createSupabaseWorkspaceButton:$("#createSupabaseWorkspaceButton"), testSupabaseWorkspaceStateButton:$("#testSupabaseWorkspaceStateButton"), createSupabasePairingCodeButton:$("#createSupabasePairingCodeButton"), consumeSupabasePairingCodeButton:$("#consumeSupabasePairingCodeButton"), supabasePairingCodeInput:$("#supabasePairingCodeInput"), supabasePairingCodeOutput:$("#supabasePairingCodeOutput"), supabasePairingExpiresOutput:$("#supabasePairingExpiresOutput"), uploadSupabaseTodaySetlistButton:$("#uploadSupabaseTodaySetlistButton"), previewSupabaseTodaySetlistButton:$("#previewSupabaseTodaySetlistButton"), supabaseTodaySetlistPreview:$("#supabaseTodaySetlistPreview"), supabaseTodaySetlistMeta:$("#supabaseTodaySetlistMeta"), supabaseConnectionStatus:$("#supabaseConnectionStatus"), supabaseStateTestStatus:$("#supabaseStateTestStatus"), supabaseAuthStatus:$("#supabaseAuthStatus"), supabaseWorkspaceStatus:$("#supabaseWorkspaceStatus"), supabasePairingStatus:$("#supabasePairingStatus"), supabaseTodaySetlistStatus:$("#supabaseTodaySetlistStatus"),
+  supabaseUrlInput:$("#supabaseUrlInput"), supabaseKeyInput:$("#supabaseKeyInput"), testSupabaseConnectionButton:$("#testSupabaseConnectionButton"), testSupabaseStateButton:$("#testSupabaseStateButton"), supabaseAnonymousLoginButton:$("#supabaseAnonymousLoginButton"), createSupabaseWorkspaceButton:$("#createSupabaseWorkspaceButton"), testSupabaseWorkspaceStateButton:$("#testSupabaseWorkspaceStateButton"), createSupabasePairingCodeButton:$("#createSupabasePairingCodeButton"), consumeSupabasePairingCodeButton:$("#consumeSupabasePairingCodeButton"), supabasePairingCodeInput:$("#supabasePairingCodeInput"), supabasePairingCodeOutput:$("#supabasePairingCodeOutput"), supabasePairingExpiresOutput:$("#supabasePairingExpiresOutput"), uploadSupabaseTodaySetlistButton:$("#uploadSupabaseTodaySetlistButton"), previewSupabaseTodaySetlistButton:$("#previewSupabaseTodaySetlistButton"), applySupabaseTodaySetlistButton:$("#applySupabaseTodaySetlistButton"), supabaseTodaySetlistPreview:$("#supabaseTodaySetlistPreview"), supabaseTodaySetlistMeta:$("#supabaseTodaySetlistMeta"), supabaseConnectionStatus:$("#supabaseConnectionStatus"), supabaseStateTestStatus:$("#supabaseStateTestStatus"), supabaseAuthStatus:$("#supabaseAuthStatus"), supabaseWorkspaceStatus:$("#supabaseWorkspaceStatus"), supabasePairingStatus:$("#supabasePairingStatus"), supabaseTodaySetlistStatus:$("#supabaseTodaySetlistStatus"), supabaseTodaySetlistApplyStatus:$("#supabaseTodaySetlistApplyStatus"),
   appInfoVersion:$("#appInfoVersion"), appInfoSongs:$("#appInfoSongs"), appInfoFavorites:$("#appInfoFavorites"), appInfoSingLogs:$("#appInfoSingLogs"), appInfoDrafts:$("#appInfoDrafts"), appInfoStreams:$("#appInfoStreams"),
   diagnosticPanel:$("#diagnosticPanel"), diagnosticContent:$("#diagnosticContent"), diagVersion:$("#diagVersion"), diagSongCount:$("#diagSongCount"), diagSingLogCount:$("#diagSingLogCount"), diagDraftCount:$("#diagDraftCount"), diagTodaySetlistCount:$("#diagTodaySetlistCount")
 };
@@ -605,12 +605,22 @@ function setSupabaseTodaySetlistMeta(message,type="idle"){
   els.supabaseTodaySetlistMeta.textContent=message;
   els.supabaseTodaySetlistMeta.className="supabase-connection-status is-"+type;
 }
+function setSupabaseTodaySetlistApplyStatus(message,type="idle"){
+  if(!els.supabaseTodaySetlistApplyStatus)return;
+  els.supabaseTodaySetlistApplyStatus.textContent=message;
+  els.supabaseTodaySetlistApplyStatus.className="supabase-connection-status is-"+type;
+}
+function setSupabaseTodaySetlistApplyEnabled(enabled){
+  if(els.applySupabaseTodaySetlistButton)els.applySupabaseTodaySetlistButton.disabled=!enabled;
+}
 let supabaseTestClient=null,supabaseTestClientSignature="";
 const supabaseWorkspaceStorageKey="hootoSong.sync.workspaceId";
 const supabaseUrlStorageKey="hootoSong.sync.supabaseUrl";
 const supabasePublicKeyStorageKey="hootoSong.sync.supabasePublicKey";
 const supabaseTodaySetlistStateKey="todaySetlist";
 const localTodaySetlistStorageKey="hooto-today-setlist";
+const beforeApplyTodaySetlistStorageKey="hootoSong.sync.beforeApply.todaySetlist";
+let supabaseTodaySetlistPreviewState=null;
 function firstSupabaseRpcRow(data){
   return Array.isArray(data)?data[0]:data;
 }
@@ -636,6 +646,11 @@ function formatSupabaseTimestamp(value){
 function setSupabaseTodaySetlistPreview(value){
   if(!els.supabaseTodaySetlistPreview)return;
   els.supabaseTodaySetlistPreview.textContent=typeof value==="string"?value:JSON.stringify(value,null,2);
+}
+function clearSupabaseTodaySetlistPreviewState(message="読み込みプレビュー待ち"){
+  supabaseTodaySetlistPreviewState=null;
+  setSupabaseTodaySetlistApplyEnabled(false);
+  setSupabaseTodaySetlistApplyStatus(message,"idle");
 }
 function decodeSupabaseJwtPayload(token){
   try{
@@ -919,6 +934,7 @@ async function uploadSupabaseTodaySetlist(){
   setSupabaseTodaySetlistStatus("todaySetlist アップロード中...","checking");
   setSupabaseTodaySetlistMeta("revision / updated_at 確認中","checking");
   setSupabaseTodaySetlistPreview("アップロード中...");
+  clearSupabaseTodaySetlistPreviewState("アップロード後、読み込み確認を行うと反映できます。");
   if(els.uploadSupabaseTodaySetlistButton)els.uploadSupabaseTodaySetlistButton.disabled=true;
   try{
     const client=getSupabaseClientForTest();
@@ -954,6 +970,7 @@ async function previewSupabaseTodaySetlist(){
   setSupabaseTodaySetlistStatus("todaySetlist 読み込み確認中...","checking");
   setSupabaseTodaySetlistMeta("revision / updated_at 取得中","checking");
   setSupabaseTodaySetlistPreview("読み込み確認中...");
+  clearSupabaseTodaySetlistPreviewState("読み込み確認中です。");
   if(els.previewSupabaseTodaySetlistButton)els.previewSupabaseTodaySetlistButton.disabled=true;
   try{
     const client=getSupabaseClientForTest();
@@ -968,6 +985,7 @@ async function previewSupabaseTodaySetlist(){
       setSupabaseTodaySetlistStatus(message,"idle");
       setSupabaseTodaySetlistMeta("workspace "+workspaceId+" / revision 未取得","idle");
       setSupabaseTodaySetlistPreview(message+"\n参照中workspace："+workspaceId);
+      clearSupabaseTodaySetlistPreviewState("反映できるプレビューがありません。");
       console.info("HootoSong todaySetlist preview empty:",{workspaceId});
       return;
     }
@@ -975,15 +993,90 @@ async function previewSupabaseTodaySetlist(){
     setSupabaseTodaySetlistStatus("読み込み成功：localStorageへは反映していません。","success");
     setSupabaseTodaySetlistMeta("workspace "+workspaceId+" / revision "+readBack.data.revision+" / updated_at "+formatSupabaseTimestamp(readBack.data.updated_at)+" / "+(readBack.data.updated_by_label||"labelなし"),"success");
     setSupabaseTodaySetlistPreview(readBack.data);
+    supabaseTodaySetlistPreviewState={workspaceId,row:readBack.data};
+    const songCount=Array.isArray(readBack.data?.value?.data?.songs)?readBack.data.value.data.songs.length:0;
+    setSupabaseTodaySetlistApplyEnabled(true);
+    setSupabaseTodaySetlistApplyStatus("反映準備OK：曲数 "+songCount+" / revision "+(readBack.data.revision??"未取得"),"success");
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
     const hint=/permission|policy|rls|jwt|auth|session|unauthorized|forbidden|row-level/i.test(message)?"ログイン状態、workspace member、RLS、policyを確認してください。":"workspace_id、Supabase接続設定、app_workspace_stateを確認してください。";
     setSupabaseTodaySetlistStatus("読み込み失敗："+hint+" "+message,"error");
     setSupabaseTodaySetlistMeta("revision / updated_at 未取得","error");
     setSupabaseTodaySetlistPreview("読み込み失敗：\n"+message);
+    clearSupabaseTodaySetlistPreviewState("読み込みに失敗したため反映できません。");
     console.error("HootoSong todaySetlist preview failed:",error);
   }finally{
     if(els.previewSupabaseTodaySetlistButton)els.previewSupabaseTodaySetlistButton.disabled=false;
+  }
+}
+function validateSupabaseTodaySetlistPreviewForApply(){
+  const state=supabaseTodaySetlistPreviewState;
+  if(!state?.row)throw new Error("プレビューがありません。先にSupabaseから読み込み確認してください。");
+  const currentWorkspaceId=savedSupabaseWorkspaceId();
+  if(!currentWorkspaceId)throw new Error("workspace_id がありません。先にworkspace作成またはペアリングを完了してください。");
+  if(state.workspaceId!==currentWorkspaceId)throw new Error("workspaceが一致しません。読み込み確認をやり直してください。");
+  const row=state.row;
+  if(row.key!==supabaseTodaySetlistStateKey)throw new Error("todaySetlistではないデータです。");
+  const value=row.value;
+  if(!value||typeof value!=="object")throw new Error("valueがありません。");
+  if(value.kind!==supabaseTodaySetlistStateKey)throw new Error("todaySetlistではないデータです。");
+  if(Number(value.schemaVersion)!==1)throw new Error("schemaVersion が未対応です。");
+  if(!value.data||typeof value.data!=="object")throw new Error("dataがありません。");
+  if(!Array.isArray(value.data.songs))throw new Error("data.songs が配列ではありません。");
+  if(!value.data.songs.length)throw new Error("空データのため反映しません。");
+  const missingTitle=value.data.songs.some(song=>!String(song?.title||"").trim());
+  if(missingTitle)throw new Error("曲名のないデータを含むため反映しません。");
+  const normalized=normalizeSetlistData(value.data);
+  if(!normalized.songs.length)throw new Error("空データのため反映しません。");
+  return {row,value,data:normalized,currentWorkspaceId};
+}
+function applySupabaseTodaySetlistPreview(){
+  setSupabaseTodaySetlistApplyStatus("反映前チェック中...","checking");
+  try{
+    const {row,data,currentWorkspaceId}=validateSupabaseTodaySetlistPreviewForApply();
+    const songCount=data.songs.length;
+    const ok=confirm(
+      "Supabaseから読み込んだtodaySetlistを、この端末の今日のセトリへ反映します。\n\n"+
+      "workspace: "+currentWorkspaceId+"\n"+
+      "revision: "+(row.revision??"未取得")+"\n"+
+      "updated_at: "+formatSupabaseTimestamp(row.updated_at)+"\n"+
+      "曲数: "+songCount+"\n\n"+
+      "必要なら先にバックアップ保存してください。\n自動同期ではありません。\nよろしいですか？"
+    );
+    if(!ok){
+      setSupabaseTodaySetlistApplyStatus("反映をキャンセルしました。","idle");
+      return;
+    }
+    let previousData=null;
+    const previousRaw=localStorage.getItem(localTodaySetlistStorageKey);
+    if(previousRaw){
+      try{
+        previousData=JSON.parse(previousRaw);
+      }catch{
+        previousData=previousRaw;
+      }
+    }
+    const backup={
+      savedAt:new Date().toISOString(),
+      sourceRevision:row.revision??null,
+      sourceUpdatedAt:row.updated_at||null,
+      workspaceId:currentWorkspaceId,
+      data:previousData
+    };
+    localStorage.setItem(beforeApplyTodaySetlistStorageKey,JSON.stringify(backup));
+    localStorage.setItem(localTodaySetlistStorageKey,JSON.stringify(data));
+    todaySetlist=normalizeSetlistData(data);
+    renderSetlist();
+    render();
+    renderRemoteView();
+    const message="反映成功：今日のセトリを更新しました。曲数 "+songCount+" / revision "+(row.revision??"未取得");
+    setSupabaseTodaySetlistApplyStatus(message,"success");
+    console.info("HootoSong todaySetlist preview applied:",{workspaceId:currentWorkspaceId,revision:row.revision,updatedAt:row.updated_at,songCount});
+    showToast("今日のセトリへ反映しました");
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    setSupabaseTodaySetlistApplyStatus("反映失敗："+message,"error");
+    console.error("HootoSong todaySetlist apply failed:",error);
   }
 }
 async function testSupabaseWorkspaceStateRoundTrip(){
@@ -1197,6 +1290,7 @@ els.createSupabasePairingCodeButton?.addEventListener("click",createSupabasePair
 els.consumeSupabasePairingCodeButton?.addEventListener("click",consumeSupabasePairingCode);
 els.uploadSupabaseTodaySetlistButton?.addEventListener("click",uploadSupabaseTodaySetlist);
 els.previewSupabaseTodaySetlistButton?.addEventListener("click",previewSupabaseTodaySetlist);
+els.applySupabaseTodaySetlistButton?.addEventListener("click",applySupabaseTodaySetlistPreview);
 $("#exportCsvButton").addEventListener("click",exportSongsCSV);
 $("#openCsvDebugButton")?.addEventListener("click",()=>{els.csvDebugPanel.hidden=false;els.csvDebugPanel.open=true;if(!els.csvDebugContent.innerHTML.trim())els.csvDebugContent.innerHTML='<div class="debug-block"><strong>CSV診断</strong><small>CSVを読み込むと、見出し・状態列・曲ID列の診断結果がここに表示されます。</small></div>';els.csvDebugPanel.scrollIntoView({behavior:"smooth",block:"start"});});
 $("#backupJsonButton").addEventListener("click",exportBackupJSON);

@@ -401,6 +401,9 @@ button.data-card:hover,label.data-card:hover { color:var(--accent); border-color
 .supabase-today-actions button:nth-child(2) { color:var(--accent); background:rgba(var(--accent-rgb),.16); border:1px solid rgba(var(--accent-rgb),.36); }
 .supabase-today-actions button:disabled { opacity:.55; cursor:wait; }
 .supabase-today-preview { min-height:150px; max-height:300px; overflow:auto; margin:0; padding:12px; color:var(--text); background:var(--panel); border:1px solid var(--line); border-radius:11px; font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace; white-space:pre-wrap; word-break:break-word; }
+.supabase-today-apply { display:grid; gap:8px; }
+.supabase-today-apply button { min-height:40px; padding:0 14px; color:#372430; background:var(--accent); border:0; border-radius:10px; font-size:10px; font-weight:800; }
+.supabase-today-apply button:disabled { opacity:.55; cursor:not-allowed; }
 .settings-debug-panel { margin:12px 0 0; background:var(--bg); }
 .settings-theme-panel .theme-label:first-of-type { margin-top:6px; }
 .settings-theme-panel .mode-switch { max-width:420px; }
