@@ -765,57 +765,71 @@ async function verifySavedSupabaseWorkspaceMembership(client=null,user=null,{sil
   const activeClient=client||getSupabaseClientForTest();
   const activeUser=user||await currentSupabaseTestUser(activeClient);
   const workspaceId=savedSupabaseWorkspaceId();
+  console.info("HootoSong workspace verification started:",{workspaceId,userId:activeUser?.id||null});
   clearVerifiedSupabaseWorkspace();
   if(!workspaceId){
-    const message="workspace_id がありません。先にworkspace作成またはペアリングを完了してください。";
+    const message="保存済みworkspaceがありません。テストworkspace作成またはペアリングを行ってください。";
     if(!silent){
       setSupabaseWorkspaceStatus(message,"error");
       setSupabaseTodaySetlistMeta("workspace未選択 / revision 未取得","error");
     }
+    console.warn("HootoSong workspace verification failed:",{reason:"missing-workspace"});
     throw new Error(message);
   }
   if(!activeUser){
-    const message="保存済みworkspaceがありますが、未ログインのため確認できません。先に匿名ログインしてください。";
+    const message="workspace確認失敗：未ログインです。先に匿名ログインしてください。";
     if(!silent){
       setSupabaseWorkspaceStatus(message,"error");
       setSupabasePairingStatus(message,"error");
       setSupabaseTodaySetlistMeta("workspace未確認 / 先に匿名ログインしてください","error");
     }
+    console.warn("HootoSong workspace verification failed:",{workspaceId,reason:"not-signed-in"});
     throw new Error(message);
   }
   const member=await activeClient.from("app_workspace_members").select("workspace_id, user_id, role").eq("workspace_id",workspaceId).eq("user_id",activeUser.id).maybeSingle();
-  if(member.error)throw member.error;
+  if(member.error){
+    console.warn("HootoSong workspace verification failed:",{workspaceId,userId:activeUser.id,error:member.error});
+    throw member.error;
+  }
   if(!member.data){
-    const message="保存済みworkspaceがありますが、現在のログインユーザーはmemberではありません。匿名ログインし直す、再ペアリングする、または新しいworkspaceを作成してください。";
+    const message="workspace確認失敗：現在のログインユーザーはこのworkspaceのmemberではありません。再ペアリングするか、新しいworkspaceを作成してください。";
     if(!silent){
       setSupabaseWorkspaceStatus(message+" workspace: "+workspaceId,"error");
       setSupabasePairingStatus("member確認に失敗したため、このworkspaceではペアリングコードを発行しません。","error");
       setSupabaseTodaySetlistMeta("workspace member未確認 / 操作を中止しました","error");
     }
-    console.warn("HootoSong workspace membership not found:",{workspaceId,userId:activeUser.id});
+    console.warn("HootoSong workspace verification failed:",{workspaceId,userId:activeUser.id,reason:"not-member"});
     throw new Error(message);
   }
   markSupabaseWorkspaceVerified(workspaceId,activeUser.id);
   if(!silent){
-    setSupabaseWorkspaceStatus("workspace確認済み：このworkspaceを使用できます。workspace "+workspaceId+" / role "+(member.data.role||"member"),"success");
-    setSupabasePairingStatus("workspace確認済み：ペアリングコードを発行できます。workspace "+workspaceId,"success");
+    setSupabaseWorkspaceStatus("workspace確認成功：このworkspaceを使用できます。member確認済み："+workspaceId+" / role "+(member.data.role||"member"),"success");
+    setSupabasePairingStatus("workspace確認済み：ペアリングコードを発行できます。確認済みworkspace："+workspaceId,"success");
     setSupabaseTodaySetlistMeta("確認済みworkspace："+workspaceId+" / revision 未取得","success");
   }
-  console.info("HootoSong workspace membership verified:",{workspaceId,userId:activeUser.id,role:member.data.role});
+  console.info("HootoSong workspace verification success:",{workspaceId,userId:activeUser.id,role:member.data.role});
   return workspaceId;
 }
 async function verifySupabaseWorkspaceFromUi(){
   if(els.verifySupabaseWorkspaceButton)els.verifySupabaseWorkspaceButton.disabled=true;
   try{
+    clearVerifiedSupabaseWorkspace();
+    const workspaceId=savedSupabaseWorkspaceId();
+    setSupabaseWorkspaceStatus(workspaceId?"workspace確認中... 保存済みworkspaceのmember情報を確認しています。workspace "+workspaceId:"保存済みworkspace確認中...","checking");
+    setSupabaseTodaySetlistMeta("workspace確認中 / member情報を確認しています","checking");
+    setSupabasePairingStatus("workspace確認中... 確認完了までペアリングコード発行は待ってください。","checking");
+    console.info("HootoSong workspace verification started:",{workspaceId});
     const client=getSupabaseClientForTest();
     const user=await currentSupabaseTestUser(client);
-    if(!user)throw new Error("先に匿名ログインしてください。");
+    if(!user)throw new Error("workspace確認失敗：未ログインです。先に匿名ログインしてください。");
     return await verifySavedSupabaseWorkspaceMembership(client,user);
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
-    setSupabaseWorkspaceStatus("workspace確認失敗："+message,"error");
+    const displayMessage=message.startsWith("workspace確認失敗")?message:"workspace確認失敗："+message;
+    setSupabaseWorkspaceStatus(displayMessage,"error");
     setSupabaseTodaySetlistMeta("workspace未確認 / 操作できません","error");
-    console.error("HootoSong workspace membership verify failed:",error);
+    setSupabasePairingStatus("workspace未確認：再ペアリングするか、新しいworkspaceを作成してください。","error");
+    console.error("HootoSong workspace verification failed:",error);
     return null;
   }finally{
     if(els.verifySupabaseWorkspaceButton)els.verifySupabaseWorkspaceButton.disabled=false;
@@ -833,7 +847,14 @@ function clearSavedSupabaseWorkspace(){
 async function workspaceIdForSupabaseDataSync(client,user){
   const workspaceId=verifiedSupabaseWorkspaceForUser(user);
   if(workspaceId)return workspaceId;
-  return await verifySavedSupabaseWorkspaceMembership(client,user,{silent:false});
+  const savedWorkspaceId=savedSupabaseWorkspaceId();
+  const message=savedWorkspaceId
+    ?"先に「保存済みworkspace確認」を押して、現在のログインユーザーがmemberであることを確認してください。"
+    :"保存済みworkspaceがありません。テストworkspace作成またはペアリングを行ってください。";
+  setSupabaseWorkspaceStatus(message,"error");
+  setSupabaseTodaySetlistMeta("workspace未確認 / 操作を中止しました","error");
+  console.warn("HootoSong workspace use blocked:",{savedWorkspaceId,userId:user?.id||null,reason:"not-verified"});
+  throw new Error(message);
 }
 async function testSupabaseStateRoundTrip(){
   setSupabaseStateTestStatus("sync_test 保存・読み戻し確認中...","checking");
