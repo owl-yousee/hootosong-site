@@ -658,6 +658,21 @@ function restoreSupabaseConnectionSettings(){
   if(els.supabaseUrlInput&&!els.supabaseUrlInput.value)els.supabaseUrlInput.value=localStorage.getItem(supabaseUrlStorageKey)||"";
   if(els.supabaseKeyInput&&!els.supabaseKeyInput.value)els.supabaseKeyInput.value=localStorage.getItem(supabasePublicKeyStorageKey)||"";
 }
+function savedSupabaseWorkspaceId(){
+  return (localStorage.getItem(supabaseWorkspaceStorageKey)||"").trim();
+}
+function restoreSupabaseWorkspaceState(){
+  const workspaceId=savedSupabaseWorkspaceId();
+  if(!workspaceId){
+    setSupabaseWorkspaceStatus("workspace未作成 / 未ペアリング","idle");
+    setSupabaseTodaySetlistMeta("workspace未選択 / revision 未取得","idle");
+    return "";
+  }
+  setSupabaseWorkspaceStatus("保存済みworkspace："+workspaceId,"success");
+  setSupabasePairingStatus("保存済みworkspaceを使用します："+workspaceId,"success");
+  setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 未取得","idle");
+  return workspaceId;
+}
 function saveSupabaseConnectionSettings(){
   const url=els.supabaseUrlInput?.value.trim()||"",key=els.supabaseKeyInput?.value.trim()||"";
   if(url)localStorage.setItem(supabaseUrlStorageKey,url);
@@ -687,7 +702,7 @@ function getSupabaseClientForTest(){
   if(!globalThis.supabase?.createClient)throw new Error("Supabase client を読み込めませんでした。ネットワークまたはCDN読み込みを確認してください。");
   const signature=url+"\n"+key;
   if(supabaseTestClient&&supabaseTestClientSignature===signature)return supabaseTestClient;
-  supabaseTestClient=globalThis.supabase.createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+  supabaseTestClient=globalThis.supabase.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
   supabaseTestClientSignature=signature;
   return supabaseTestClient;
 }
@@ -791,6 +806,7 @@ async function createSupabaseTestWorkspace(){
     if(!workspaceId)throw new Error("workspace_id が返りませんでした。");
     localStorage.setItem(supabaseWorkspaceStorageKey,workspaceId);
     setSupabaseWorkspaceStatus("workspace作成成功："+workspaceId,"success");
+    setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 未取得","success");
     console.info("HootoSong test workspace created:",workspaceId);
     return workspaceId;
   }catch(error){
@@ -814,7 +830,7 @@ async function createSupabasePairingCode(){
       console.warn("HootoSong pairing code skipped:",message);
       return null;
     }
-    const workspaceId=localStorage.getItem(supabaseWorkspaceStorageKey)||"";
+    const workspaceId=savedSupabaseWorkspaceId();
     if(!workspaceId){
       const message="workspace_id がありません。先にテストworkspace作成を実行してください。";
       setSupabasePairingStatus(message,"error");
@@ -868,6 +884,7 @@ async function consumeSupabasePairingCode(){
     localStorage.setItem(supabaseWorkspaceStorageKey,workspaceId);
     setSupabasePairingStatus("ペアリング成功：workspace "+workspaceId+" を保存しました。workspace版テスト保存で確認できます。","success");
     setSupabaseWorkspaceStatus("子機参加済みworkspace："+workspaceId,"success");
+    setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 未取得","success");
     console.info("HootoSong pairing consumed:",{workspaceId});
     return workspaceId;
   }catch(error){
@@ -894,8 +911,8 @@ function readLocalTodaySetlistForUpload(){
   return normalized;
 }
 function workspaceIdForSupabaseDataSync(){
-  const workspaceId=localStorage.getItem(supabaseWorkspaceStorageKey)||"";
-  if(!workspaceId)throw new Error("workspace_id がありません。先に匿名ログイン・workspace作成・ペアリングを完了してください。");
+  const workspaceId=savedSupabaseWorkspaceId();
+  if(!workspaceId)throw new Error("workspace_id がありません。先に匿名ログイン後、workspace作成またはペアリングを完了してください。");
   return workspaceId;
 }
 async function uploadSupabaseTodaySetlist(){
@@ -908,6 +925,7 @@ async function uploadSupabaseTodaySetlist(){
     const user=await currentSupabaseTestUser(client);
     if(!user)throw new Error("未ログインです。先に匿名ログインしてください。");
     const workspaceId=workspaceIdForSupabaseDataSync();
+    setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 確認中","checking");
     const setlist=readLocalTodaySetlistForUpload();
     const savedAt=new Date().toISOString();
     const value={schemaVersion:1,kind:"todaySetlist",savedAt,sourceDevice:"PC parent",data:setlist};
@@ -919,7 +937,7 @@ async function uploadSupabaseTodaySetlist(){
     if(saved.error)throw saved.error;
     console.info("HootoSong todaySetlist uploaded:",saved.data);
     setSupabaseTodaySetlistStatus("アップロード成功：todaySetlist をSupabaseへ保存しました。","success");
-    setSupabaseTodaySetlistMeta("revision "+saved.data.revision+" / updated_at "+formatSupabaseTimestamp(saved.data.updated_at)+" / "+(saved.data.updated_by_label||"labelなし"),"success");
+    setSupabaseTodaySetlistMeta("workspace "+workspaceId+" / revision "+saved.data.revision+" / updated_at "+formatSupabaseTimestamp(saved.data.updated_at)+" / "+(saved.data.updated_by_label||"labelなし"),"success");
     setSupabaseTodaySetlistPreview(saved.data);
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
@@ -942,19 +960,20 @@ async function previewSupabaseTodaySetlist(){
     const user=await currentSupabaseTestUser(client);
     if(!user)throw new Error("未ログインです。先に匿名ログインしてください。");
     const workspaceId=workspaceIdForSupabaseDataSync();
+    setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 取得中","checking");
     const readBack=await client.from("app_workspace_state").select("key, value, updated_at, updated_by, updated_by_label, revision").eq("workspace_id",workspaceId).eq("key",supabaseTodaySetlistStateKey).maybeSingle();
     if(readBack.error)throw readBack.error;
     if(!readBack.data){
       const message="まだSupabaseにtodaySetlistがありません。";
       setSupabaseTodaySetlistStatus(message,"idle");
-      setSupabaseTodaySetlistMeta("revision / updated_at 未取得","idle");
-      setSupabaseTodaySetlistPreview(message);
+      setSupabaseTodaySetlistMeta("workspace "+workspaceId+" / revision 未取得","idle");
+      setSupabaseTodaySetlistPreview(message+"\n参照中workspace："+workspaceId);
       console.info("HootoSong todaySetlist preview empty:",{workspaceId});
       return;
     }
     console.info("HootoSong todaySetlist preview loaded:",readBack.data);
     setSupabaseTodaySetlistStatus("読み込み成功：localStorageへは反映していません。","success");
-    setSupabaseTodaySetlistMeta("revision "+readBack.data.revision+" / updated_at "+formatSupabaseTimestamp(readBack.data.updated_at)+" / "+(readBack.data.updated_by_label||"labelなし"),"success");
+    setSupabaseTodaySetlistMeta("workspace "+workspaceId+" / revision "+readBack.data.revision+" / updated_at "+formatSupabaseTimestamp(readBack.data.updated_at)+" / "+(readBack.data.updated_by_label||"labelなし"),"success");
     setSupabaseTodaySetlistPreview(readBack.data);
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
@@ -1187,6 +1206,7 @@ $("#cancelRestore").addEventListener("click",()=>{pendingBackup=null;els.restore
 $("#confirmRestore").addEventListener("click",()=>{if(!pendingBackup)return;applyBackup(pendingBackup);pendingBackup=null;els.restoreDialog.close();showToast("バックアップを復元しました");});
 els.csv.addEventListener("change",async event=>{const file=event.target.files[0];if(!file)return;try{const imported=parseCSV(await file.text());if(!imported.length)throw new Error("曲名のある行がありません");songs=imported;clearFocusedSong();currentPage=1;saveSongs();rebuildStatuses();render();const debug=globalThis.hootoLastCsvDebug,counts=debug?.finalStatusCounts||{},idWarning=debug?.songIdDuplicateCount>0?" / ⚠ 曲ID重複あり":"";if(debug)renderCsvDebug(debug);showMainTab("settings");if(debug)setTimeout(()=>els.csvDebugPanel.scrollIntoView({behavior:"smooth",block:"start"}),80);showToast(`${songs.length}曲を読み込みました / 状態列 ${debug?.statusHeader||"未検出"} / 曲ID列 ${debug?.hasSongIdColumn?"あり":"なし"} / 歌える ${counts["歌える"]||0} / 練習中 ${counts["練習中"]||0} / 要確認 ${counts["要確認"]||0}${debug?.warning?" / ⚠ 状態列を確認してください":""}${idWarning}`);}catch(error){showToast(`読み込めませんでした：${error.message}`);}event.target.value="";});
 restoreSupabaseConnectionSettings();
+restoreSupabaseWorkspaceState();
 els.streamDate.value=todayString();
 saveSongs();
 applyTheme(loadTheme());
