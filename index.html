@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ja" data-mode="dark" data-accent="pink">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#171420">
+  <title>Hooto - 歌枠マネージャー</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-ui-mode="desktop">
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="Hooto ホーム">
+      <span class="mini-owl" aria-hidden="true"><img class="owl-art owl-art-icon" src="assets/hooto-owl-icon.png" alt="" onload="this.parentElement.classList.add('has-owl-image')" onerror="this.remove()"><i></i></span>
+      <span><strong>Hooto</strong><small>歌枠マネージャー</small></span>
+    </a>
+    <div class="header-actions">
+      <button id="remoteModeButton" class="header-tab-link" type="button"><span aria-hidden="true">📱</span><b>リモコン</b></button>
+      <button class="header-tab-link" data-bottom-tab-jump="settings" type="button"><span aria-hidden="true">⚙</span><b>設定</b></button>
+    </div>
+  </header>
+
+  <main>
+    <div id="songView">
+    <section class="hero">
+      <div class="hero-copy"><span class="eyebrow">SONG COLLECTION</span><h1>今夜は、<br><em>どの歌にする？</em></h1><p>お気に入りも、久しぶりの曲も。<br class="mobile-only">歌いたい一曲をすぐに見つけよう。</p></div>
+      <div class="owl-scene" aria-hidden="true"><div class="sparkle s1">✦</div><div class="sparkle s2">✦</div><img class="owl-art owl-art-main" src="assets/hooto-owl.png" alt="" onload="this.parentElement.classList.add('has-owl-image')" onerror="this.remove()"><div class="moon"></div><div class="owl"><div class="owl-ear left"></div><div class="owl-ear right"></div><div class="owl-body"><div class="eye left"><b></b></div><div class="eye right"><b></b></div><div class="beak"></div><div class="wing left"></div><div class="wing right"></div></div></div></div>
+    </section>
+
+    <section class="quick-actions" aria-label="選曲サポート">
+      <button id="setlistButton" class="quick-card featured"><span class="quick-icon setlist">☷</span><span><strong>今日のセトリ</strong><small><b id="setlistTopCount">0</b> 曲を選曲中</small></span><i>→</i></button>
+      <button id="historyButton" class="quick-card featured"><span class="quick-icon history">▤</span><span><strong>過去のセトリ</strong><small><b id="streamCount">0</b> 枠を保存中</small></span><i>→</i></button>
+      <button id="draftsButton" class="quick-card"><span class="quick-icon drafts">✎</span><span><strong>セトリ案</strong><small><b id="draftCount">0</b> 件の候補</small></span><i>→</i></button>
+      <button id="singLogButton" class="quick-card"><span class="quick-icon history">♪</span><span><strong>歌唱履歴</strong><small><b id="singLogCount">0</b> 件の記録</small></span><i>→</i></button>
+      <button id="randomButton" class="quick-card"><span class="quick-icon dice">◆</span><span><strong>ランダム選曲</strong><small>全曲から運命の一曲</small></span><i>→</i></button>
+      <button id="rouletteButton" class="quick-card"><span class="quick-icon heart">♥</span><span><strong>お気に入りルーレット</strong><small>推し曲だけで抽選</small></span><i>→</i></button>
+    </section>
+
+    </div>
+
+    <section id="historyView" class="history-view" hidden>
+      <div class="history-hero">
+        <button id="backToSongs" class="back-button" type="button">← 曲一覧へ戻る</button>
+        <span class="eyebrow">STREAM ARCHIVE</span>
+        <div class="history-title-row"><div><h1>過去の歌枠</h1><p>思い出のセトリを、日付ごとに振り返ろう。</p></div><div class="archive-owl" aria-hidden="true">◉▽◉</div></div>
+      </div>
+      <div class="new-stream-bar">
+        <div><strong>歌枠を作成</strong><span>日付だけ先に登録できます</span></div>
+        <label><span class="sr-only">歌枠の日付</span><input id="streamDate" type="date"></label>
+        <button id="createStream" type="button">＋ この日で作成</button>
+      </div>
+      <div class="archive-heading"><h2>歌枠アーカイブ</h2><span id="archiveCount">0 streams</span></div>
+      <div id="historyList" class="history-list"></div>
+      <div id="historyEmpty" class="empty-state"><div class="empty-owl">◉v◉</div><h3>まだ歌枠がありません</h3><p>曲の「歌った！」を押すと、今日のセトリが自動で作られます。</p></div>
+    </section>
+
+    <section id="draftsView" class="workspace-view" hidden>
+      <div class="workspace-hero"><button class="back-button" data-back-home type="button">← TOPへ戻る</button><span class="eyebrow">SETLIST IDEAS</span><div><div><h1>セトリ案</h1><p>歌枠前の候補セトリを保存しておけます。</p></div><div class="archive-owl" aria-hidden="true">◉✎◉</div></div></div>
+      <div class="draft-help"><div><strong>セトリ案の作り方</strong><span>今日のセトリ画面で曲やメモを整えて「セトリ案に保存」を押すと、ここに候補として保存されます。</span></div><button id="openSetlistFromDrafts" type="button">＋ 今日のセトリで作る</button></div>
+      <div class="archive-heading"><h2>保存済みセトリ案</h2><span id="draftArchiveCount">0 ideas</span></div>
+      <div id="draftList" class="draft-list"></div>
+      <div id="draftEmpty" class="empty-state"><div class="empty-owl">◉v◉</div><h3>セトリ案はまだありません</h3><p>今日のセトリを作って、候補として保存してみましょう。</p></div>
+    </section>
+
+    <section id="setlistView" class="workspace-view" hidden>
+      <div class="workspace-hero"><button class="back-button" data-back-home type="button">← TOPへ戻る</button><span class="eyebrow">TODAY'S SETLIST</span><div><div><h1>今日のセトリ</h1><p id="setlistDateLabel"></p></div><div class="archive-owl" aria-hidden="true">◉♪◉</div></div></div>
+      <div class="setlist-info-panel">
+        <label><span>セトリ名</span><input id="setlistName" type="text" placeholder="例：初夏のアニソン歌枠"></label>
+        <label><span>配信タイトル</span><input id="setlistStreamTitle" type="text" placeholder="例：【歌枠】今夜は元気に歌う！"></label>
+        <label class="wide"><span>メモ</span><textarea id="setlistMemo" rows="3" placeholder="MCの流れ、注意点、次回へのメモなど"></textarea></label>
+      </div>
+      <div id="draftEditNotice" class="draft-edit-notice" hidden><span>✎</span><strong>セトリ案編集中</strong><small id="draftEditName"></small><button id="cancelDraftEdit" type="button">編集をやめる</button></div>
+      <div class="setlist-toolbar"><div><strong><b id="setlistCount">0</b> songs</strong><span>曲カードから追加できます</span></div><button id="copySetlist" type="button">⧉ コピー</button><button id="exportSetlist" type="button">↓ テキスト出力</button><button id="saveDraftSetlist" type="button">セトリ案に保存</button><button id="updateDraftSetlist" type="button" hidden>セトリ案を更新</button><button id="saveSetlist" class="primary" type="button">配信完了してアーカイブ保存</button></div>
+      <ol id="setlistList" class="setlist-list"></ol>
+      <div id="setlistEmpty" class="empty-state"><div class="empty-owl">◉v◉</div><h3>セトリはまだ空です</h3><p>曲一覧の「セトリに追加」から選曲してみましょう。</p></div>
+    </section>
+
+    <section id="artistsView" class="workspace-view" hidden>
+      <div class="workspace-hero"><button class="back-button" data-back-home type="button">← TOPへ戻る</button><span class="eyebrow">ARTIST LIBRARY</span><div><div><h1>アーティスト別</h1><p>歌いたいアーティストから曲を探そう。</p></div><div class="archive-owl" aria-hidden="true">◉♫◉</div></div></div>
+      <div class="artist-search"><span>⌕</span><input id="artistSearch" type="search" placeholder="アーティスト名で検索"></div>
+      <div id="artistList" class="artist-list"></div>
+      <div id="artistEmpty" class="empty-state" hidden><div class="empty-owl">◉v◉</div><h3>アーティストが見つかりません</h3></div>
+    </section>
+
+    <section id="songsTabView" class="tab-placeholder-view" hidden>
+      <div class="tab-page-head">
+        <span class="eyebrow">SONG LIBRARY</span>
+        <div>
+          <div>
+            <h1>曲一覧</h1>
+            <p>検索・フィルタ・曲追加・編集はここでまとめて管理できます。</p>
+          </div>
+          <div class="archive-owl" aria-hidden="true">◉♫◉</div>
+        </div>
+      </div>
+
+      <details class="data-overview">
+        <summary><span class="data-owl">◉</span><span><strong>曲データを見る</strong><small>統計・半年以上・アーティスト順</small></span><i>⌄</i></summary>
+        <div class="data-card-grid" aria-label="曲データと管理">
+          <button id="artistsButton" class="data-card nav" type="button"><span class="quick-icon artists">♬</span><span><strong>アーティスト順</strong><small>YOASOBI、Ado… <b id="artistCount">0</b> 組</small></span><i>→</i></button>
+          <button id="titleSortButton" class="data-card nav" type="button"><span>あ</span><span><strong>タイトル順</strong><small>曲名・読み順で一覧</small></span><i>→</i></button>
+          <button id="favoriteDataButton" class="data-card favorite" type="button"><span>♥</span><span><strong id="statFavorite">0</strong><small>お気に入り</small></span><i>→</i></button>
+          <button id="overdueButton" class="data-card overdue" type="button"><span>◷</span><span><strong id="statOverdue">0</strong><small>半年以上歌っていない曲</small></span><i>→</i><b id="overdueCount" hidden>0</b></button>
+          <div class="data-card total"><span>♫</span><span><strong id="statTotal">0</strong><small>総曲数</small></span></div>
+          <div class="data-card singable"><span>●</span><span><strong id="statSingable">0</strong><small>歌える</small></span></div>
+          <div class="data-card practice"><span>●</span><span><strong id="statPractice">0</strong><small>練習中</small></span></div>
+          <div class="data-card check"><span>●</span><span><strong id="statCheck">0</strong><small>要確認</small></span></div>
+          <div class="data-card owl-peek" aria-hidden="true"><img class="owl-art owl-art-card" src="assets/hooto-owl-icon.png" alt="" onload="this.parentElement.classList.add('has-owl-image')" onerror="this.remove()"><span class="peek-owl">◉v◉</span><span><strong>Hooto</strong><small>いつでも見守り中</small></span></div>
+        </div>
+      </details>
+
+      <section class="toolbar" aria-label="曲の検索と絞り込み">
+        <div class="search-box"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="曲名やアーティストで検索" autocomplete="off"><kbd>⌘ K</kbd></div>
+        <div class="filter-row">
+          <div class="segmented" aria-label="お気に入り絞り込み"><button class="active" data-favorite="all">すべて</button><button data-favorite="favorite">♡ お気に入り</button></div>
+          <label class="select-wrap"><span class="sr-only">状態</span><select id="statusFilter"><option value="all">すべての状態</option></select></label>
+          <label class="select-wrap"><span class="sr-only">季節</span><select id="seasonFilter"><option value="all">すべての季節</option><option value="春">🌸 春</option><option value="夏">☀ 夏</option><option value="秋">🍁 秋</option><option value="冬">❄ 冬</option><option value="通年">○ 通年</option></select></label>
+          <label class="select-wrap"><span class="sr-only">ジャンル</span><select id="genreFilter"><option value="all">すべてのジャンル</option><option>J-POP</option><option>ボカロ</option><option>アニソン</option><option>ゲーム</option><option>童謡</option><option>歌謡曲</option></select></label>
+          <label class="select-wrap"><span class="sr-only">ボーカル属性</span><select id="vocalFilter"><option value="all">すべてのボーカル属性</option><option>男性ボーカル</option><option>女性ボーカル</option><option>男女混成</option></select></label>
+          <label class="select-wrap sort-select"><span class="sr-only">並べ替え</span><select id="sortSelect"><option value="last-desc">最終歌唱日（新しい順）</option><option value="last-asc">最終歌唱日（古い順）</option><option value="count-desc">歌唱回数（多い順）</option><option value="count-asc">歌唱回数（少ない順）</option><option value="title">曲名（あいうえお順）</option></select></label>
+        </div>
+      </section>
+
+      <section class="collection">
+        <div class="section-heading"><div><span class="heading-icon">♫</span><h2 id="listTitle">マイソング</h2><span id="songCount" class="count-pill">0 songs</span></div><div class="heading-side"><p id="resultMessage">あなたの歌える曲リスト</p><button id="clearSpecialFilter" class="clear-filter" hidden>通常の一覧に戻す ×</button><button id="addSongButton" class="add-song-button" type="button">＋ 曲を追加</button></div></div>
+        <div id="songGrid" class="song-grid" aria-live="polite"></div>
+        <nav id="pagination" class="pagination" aria-label="曲一覧のページ操作">
+          <label class="page-size"><span>1ページ</span><select id="pageSize" aria-label="1ページの表示曲数"><option value="20" selected>20曲</option><option value="50">50曲</option><option value="100">100曲</option></select></label>
+          <div class="page-controls">
+            <button id="prevPage" type="button" aria-label="前のページ"><span aria-hidden="true">←</span><b>前のページ</b></button>
+            <span id="pageStatus" class="page-status" aria-live="polite"><strong>1</strong><i>/</i><span>1</span></span>
+            <button id="nextPage" type="button" aria-label="次のページ"><b>次のページ</b><span aria-hidden="true">→</span></button>
+          </div>
+        </nav>
+        <div id="emptyState" class="empty-state" hidden><div class="empty-owl">◉v◉</div><h3>曲が見つかりませんでした</h3><p>検索ワードや絞り込みを変えてみてください。</p></div>
+      </section>
+    </section>
+
+    <section id="logsTabView" class="tab-placeholder-view history-tab-view" hidden>
+      <div class="tab-page-head">
+        <span class="eyebrow">SINGING LOG</span>
+        <div>
+          <div>
+            <h1>履歴</h1>
+            <p>今月の振り返り、よく歌った曲、最近歌った曲、全履歴をまとめて確認できます。</p>
+          </div>
+          <div class="archive-owl" aria-hidden="true">◉♪◉</div>
+        </div>
+      </div>
+      <div class="log-filter-bar">
+        <div class="artist-search"><span>⌕</span><input id="singLogSearch" type="search" placeholder="曲名・アーティスト・メモで検索"></div>
+        <label class="select-wrap log-type-filter"><span class="sr-only">歌唱タイプ</span><select id="singLogTypeFilter"><option value="all">すべての履歴</option><option>配信</option><option>カラオケ</option><option>練習</option></select></label>
+      </div>
+      <div class="sing-log-stats" aria-label="歌唱履歴の集計">
+        <div><strong id="logStatMonthTotal">0</strong><small>今月の歌唱数</small></div>
+        <div><strong id="logStatMonthStream">0</strong><small>今月の配信</small></div>
+        <div><strong id="logStatMonthKaraoke">0</strong><small>今月のカラオケ</small></div>
+        <div><strong id="logStatMonthPractice">0</strong><small>今月の練習</small></div>
+        <div><strong id="logStatAll">0</strong><small>全期間の履歴</small></div>
+      </div>
+      <div class="sing-analysis-grid">
+        <section class="sing-analysis-panel">
+          <div class="analysis-heading"><h2>よく歌っている曲</h2><div class="rank-filter" aria-label="ランキング切り替え"><button class="active" data-rank-type="all">全体</button><button data-rank-type="配信">配信</button><button data-rank-type="カラオケ">カラオケ</button><button data-rank-type="練習">練習</button></div></div>
+          <div id="singRankingList" class="sing-ranking-list"></div>
+        </section>
+        <section class="sing-analysis-panel">
+          <div class="analysis-heading"><h2>最近歌った曲</h2><span id="recentSingCount">0 songs</span></div>
+          <div id="recentSingList" class="recent-sing-list"></div>
+        </section>
+      </div>
+      <div class="archive-heading"><h2 id="singLogTitle">すべての歌唱履歴</h2><span id="singLogArchiveCount">0 logs</span></div>
+      <div id="singLogList" class="sing-log-list"></div>
+      <div id="singLogEmpty" class="empty-state"><div class="empty-owl">◉v◉</div><h3>歌唱履歴はまだありません</h3><p>曲カードの「歌った！」から記録できます。</p></div>
+    </section>
+
+    <section id="settingsTabView" class="tab-placeholder-view settings-tab-view" hidden>
+      <div class="tab-page-head">
+        <span class="eyebrow">SETTINGS</span>
+        <div>
+          <div>
+            <h1>設定</h1>
+            <p>CSV・バックアップ・テーマなど、Hootoの管理とメンテナンスをまとめています。</p>
+          </div>
+          <div class="archive-owl" aria-hidden="true">◉⚙◉</div>
+        </div>
+      </div>
+
+      <section class="settings-section">
+        <div class="settings-section-head">
+          <span class="settings-icon">CSV</span>
+          <div><h2>データ管理</h2><p>曲データの読み込み・書き出しと、CSV診断を行います。</p></div>
+        </div>
+        <div class="settings-action-grid">
+          <label class="settings-action-card primary" for="csvInput"><span>＋</span><strong>CSV読み込み</strong><small>曲データを取り込み</small><input id="csvInput" type="file" accept=".csv,text/csv" hidden></label>
+          <button id="exportCsvButton" class="settings-action-card" type="button"><span>⇩</span><strong>CSV書き出し</strong><small>現在の曲データを保存</small></button>
+          <button id="openCsvDebugButton" class="settings-action-card" type="button"><span>CSV</span><strong>CSV診断</strong><small>読み込み結果と列認識を確認</small></button>
+        </div>
+        <details id="csvDebugPanel" class="csv-debug-panel settings-debug-panel" hidden>
+          <summary><span>CSV</span><strong>読み込み診断</strong><small>状態列・曲ID列の認識結果を確認できます</small><i>⌄</i></summary>
+          <div id="csvDebugContent" class="csv-debug-content"></div>
+        </details>
+      </section>
+
+      <section class="settings-section">
+        <div class="settings-section-head">
+          <span class="settings-icon">JSON</span>
+          <div><h2>バックアップ</h2><p>曲・セトリ・履歴・テーマをまとめて保存・復元します。</p></div>
+        </div>
+        <div class="settings-action-grid">
+          <button id="backupJsonButton" class="settings-action-card" type="button"><span>⬇</span><strong>バックアップ保存</strong><small>JSONとして保存</small></button>
+          <label class="settings-action-card danger-soft" for="restoreJsonInput"><span>↺</span><strong>バックアップ復元</strong><small>既存データを上書きする可能性があります</small><input id="restoreJsonInput" type="file" accept=".json,application/json" hidden></label>
+        </div>
+      </section>
+
+      <section class="settings-section supabase-sync-section">
+        <div class="settings-section-head">
+          <span class="settings-icon">SYNC</span>
+          <div><h2>Supabase 同期準備</h2><p>PC/iPhone同期の準備用です。今回は接続確認のみで、曲データやセトリはアップロードしません。</p></div>
+        </div>
+        <div class="supabase-sync-form">
+          <label>
+            <span>Supabase URL</span>
+            <input id="supabaseUrlInput" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://xxxxxxxx.supabase.co">
+          </label>
+          <label>
+            <span>Supabase public key</span>
+            <textarea id="supabaseKeyInput" autocomplete="off" spellcheck="false" rows="3" placeholder="publishable key / anon key"></textarea>
+          </label>
+        </div>
+        <div class="supabase-sync-note">
+          <strong>注意</strong>
+          <span>service_role key や secret key は絶対に入力しないでください。ブラウザに表示される可能性があります。</span>
+          <span>RLSや認証を有効にしている場合、未ログインでは app_state を読めないことがあります。ログイン機能は次Phase以降で検討します。</span>
+        </div>
+        <div class="supabase-sync-actions">
+          <button id="testSupabaseConnectionButton" type="button">接続確認</button>
+          <button id="testSupabaseStateButton" type="button">ログイン後テスト保存</button>
+          <button id="supabaseAnonymousLoginButton" type="button">匿名ログイン</button>
+          <button id="createSupabaseWorkspaceButton" type="button">テストworkspace作成</button>
+          <button id="testSupabaseWorkspaceStateButton" type="button">workspace版テスト保存</button>
+          <div id="supabaseConnectionStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">未確認</div>
+          <div id="supabaseStateTestStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">sync_test 未実行</div>
+          <div id="supabaseAuthStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">匿名ログイン未確認</div>
+          <div id="supabaseWorkspaceStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">workspace未作成</div>
+        </div>
+        <div class="supabase-pairing-panel">
+          <div class="supabase-pairing-group">
+            <div>
+              <strong>PC親機</strong>
+              <span>現在のworkspace用コードを発行します。</span>
+            </div>
+            <button id="createSupabasePairingCodeButton" type="button">ペアリングコード発行</button>
+            <output id="supabasePairingCodeOutput">未発行</output>
+            <small id="supabasePairingExpiresOutput">有効期限未設定</small>
+          </div>
+          <div class="supabase-pairing-group">
+            <div>
+              <strong>iPhone子機</strong>
+              <span>匿名ログイン後、PC親機のコードを入力します。</span>
+            </div>
+            <label>
+              <span>ペアリングコード</span>
+              <input id="supabasePairingCodeInput" type="text" inputmode="text" autocomplete="one-time-code" spellcheck="false" placeholder="例：ABC123">
+            </label>
+            <button id="consumeSupabasePairingCodeButton" type="button">ペアリング実行</button>
+          </div>
+          <div id="supabasePairingStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">ペアリング未実行</div>
+        </div>
+      </section>
+
+      <section id="themePanel" class="settings-section settings-theme-panel" aria-label="テーマ設定">
+        <div class="settings-section-head">
+          <span class="settings-icon">🎨</span>
+          <div><h2>表示設定</h2><p>ダーク/ライトとテーマカラーを変更できます。</p></div>
+        </div>
+        <p class="theme-label">HootoMemo風テーマ</p>
+        <div class="preset-choices">
+          <button data-theme-preset="default-dark" type="button"><span style="--swatch:#ffad66"></span><b>Default Dark</b></button>
+          <button data-theme-preset="hooto-orange-dark" type="button"><span style="--swatch:#ffad66"></span><b>Hooto Orange Dark</b></button>
+          <button data-theme-preset="hooto-mint-light" type="button"><span style="--swatch:#72d6af"></span><b>Hooto Mint Light</b></button>
+          <button data-theme-preset="hooto-green-dark" type="button"><span style="--swatch:#8ee6a8"></span><b>Hooto Green Dark</b></button>
+          <button data-theme-preset="hooto-orange-light" type="button"><span style="--swatch:#f3a55f"></span><b>Hooto Orange Light</b></button>
+          <button data-theme-preset="hooto-blue-dark" type="button"><span style="--swatch:#8ec9ff"></span><b>Hooto Blue Dark</b></button>
+        </div>
+        <p class="theme-label">明るさ</p>
+        <div class="mode-switch"><button data-mode-choice="dark">☾ ダーク</button><button data-mode-choice="light">☀ ライト</button></div>
+        <p class="theme-label">テーマカラー</p>
+        <div class="color-choices">
+          <button data-accent-choice="pink" style="--swatch:#ff8fb4" aria-label="ピンク"></button>
+          <button data-accent-choice="purple" style="--swatch:#b99aff" aria-label="パープル"></button>
+          <button data-accent-choice="blue" style="--swatch:#74b9ff" aria-label="ブルー"></button>
+          <button data-accent-choice="green" style="--swatch:#72d6af" aria-label="グリーン"></button>
+          <button data-accent-choice="orange" style="--swatch:#ffad66" aria-label="オレンジ"></button>
+        </div>
+      </section>
+
+      <section class="settings-section diagnostic-section">
+        <div class="settings-section-head">
+          <span class="settings-icon">🩺</span>
+          <div><h2>診断</h2><p>エラーログと保存データの状態を確認します。不具合報告やデータ破損確認に使えます。</p></div>
+        </div>
+        <div class="diagnostic-actions">
+          <details class="diagnostic-more-actions">
+            <summary>その他操作</summary>
+            <div class="diagnostic-more-grid">
+              <button id="copyErrorLogsButton" class="settings-action-card" type="button"><span>⧉</span><strong>エラーログをコピー</strong><small>最近のエラーだけコピー</small></button>
+              <button id="copyDiagnosticButton" class="settings-action-card" type="button"><span>⧉</span><strong>診断結果をコピー</strong><small>データ診断結果をコピー</small></button>
+              <button id="clearErrorLogsButton" class="settings-action-card danger-soft" type="button"><span>×</span><strong>エラーログを消去</strong><small>診断ログのみ削除</small></button>
+              <button id="resetDiagnosticButton" class="settings-action-card danger-soft" type="button"><span>↺</span><strong>診断結果をリセット</strong><small>画面上の診断結果のみ消去</small></button>
+            </div>
+          </details>
+        </div>
+        <div class="diagnostic-grid">
+          <div><small>アプリバージョン</small><strong id="diagVersion">-</strong></div>
+          <div><small>総曲数</small><strong id="diagSongCount">0</strong></div>
+          <div><small>歌唱履歴件数</small><strong id="diagSingLogCount">0</strong></div>
+          <div><small>セトリ案数</small><strong id="diagDraftCount">0</strong></div>
+          <div><small>今日のセトリ曲数</small><strong id="diagTodaySetlistCount">0</strong></div>
+        </div>
+        <details id="diagnosticPanel" class="csv-debug-panel settings-debug-panel diagnostic-panel" open>
+          <summary><span>🩺</span><strong>状態ダッシュボード</strong><small>Hootoの保存状態をすばやく確認します</small><i>⌄</i></summary>
+          <div id="diagnosticContent" class="csv-debug-content"></div>
+        </details>
+      </section>
+
+      <section class="settings-section app-info-section">
+        <div class="settings-section-head">
+          <span class="settings-icon">🦉</span>
+          <div><h2>アプリ情報</h2><p>同期やデータ診断に使う基本情報です。</p></div>
+        </div>
+        <div class="app-info-grid">
+          <div><small>Hooto バージョン</small><strong id="appInfoVersion">-</strong></div>
+          <div><small>総曲数</small><strong id="appInfoSongs">0</strong></div>
+          <div><small>お気に入り曲数</small><strong id="appInfoFavorites">0</strong></div>
+          <div><small>歌唱履歴件数</small><strong id="appInfoSingLogs">0</strong></div>
+          <div><small>セトリ案数</small><strong id="appInfoDrafts">0</strong></div>
+          <div><small>過去セトリ数</small><strong id="appInfoStreams">0</strong></div>
+        </div>
+      </section>
+    </section>
+    <section id="remoteView" class="remote-view" hidden aria-label="iPhoneリモコン画面">
+      <div class="remote-shell">
+        <div class="remote-hero-card">
+          <div class="remote-title-row">
+            <div class="remote-owl" aria-hidden="true">◉v◉</div>
+            <h1>配信中リモコン</h1>
+          </div>
+        </div>
+
+        <section class="remote-panel">
+          <div class="remote-panel-head">
+            <div><span>SETLIST</span><h2>今日のセトリ</h2></div>
+            <strong id="remoteSetlistCount">0曲</strong>
+          </div>
+          <div id="remoteSetlistSummary" class="remote-setlist-summary"></div>
+          <ol id="remoteSetlistList" class="remote-setlist-list"></ol>
+          <div id="remoteSetlistEmpty" class="remote-empty">まだ今日のセトリは空です。</div>
+          <button id="remoteCommitSetlist" class="remote-commit-button" type="button">配信完了</button>
+        </section>
+
+        <section class="remote-panel">
+          <div class="remote-panel-head">
+            <div><span>RANDOM</span><h2>ランダム選曲メモ</h2></div>
+            <strong>READ ONLY</strong>
+          </div>
+          <div id="remoteRandomResult" class="remote-random-result"></div>
+        </section>
+
+        <section class="remote-panel">
+          <div class="remote-panel-head">
+            <div><span>RECENT LOGS</span><h2>最新の歌唱履歴</h2></div>
+            <strong id="remoteLogCount">0件</strong>
+          </div>
+          <div id="remoteLogList" class="remote-log-list"></div>
+          <button id="remoteLogToggle" class="remote-log-toggle" type="button" hidden>履歴をもっと見る</button>
+          <div id="remoteLogEmpty" class="remote-empty">歌唱履歴はまだありません。</div>
+        </section>
+
+        <details id="remoteSettingsPanel" class="remote-panel remote-settings-panel">
+          <summary><span>⚙</span><strong>リモコン設定</strong><i>⌄</i></summary>
+          <div class="remote-settings-body">
+            <p class="theme-label">テーマ</p>
+            <div class="preset-choices remote-preset-choices">
+              <button data-theme-preset="default-dark" type="button"><span style="--swatch:#ffad66"></span><b>Default Dark</b></button>
+              <button data-theme-preset="hooto-orange-dark" type="button"><span style="--swatch:#ffad66"></span><b>Hooto Orange Dark</b></button>
+              <button data-theme-preset="hooto-mint-light" type="button"><span style="--swatch:#72d6af"></span><b>Hooto Mint Light</b></button>
+              <button data-theme-preset="hooto-green-dark" type="button"><span style="--swatch:#8ee6a8"></span><b>Hooto Green Dark</b></button>
+              <button data-theme-preset="hooto-orange-light" type="button"><span style="--swatch:#f3a55f"></span><b>Hooto Orange Light</b></button>
+              <button data-theme-preset="hooto-blue-dark" type="button"><span style="--swatch:#8ec9ff"></span><b>Hooto Blue Dark</b></button>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-tab-nav" aria-label="メインタブ">
+    <button class="active" type="button" data-bottom-tab="home" aria-current="page"><span aria-hidden="true">⌂</span><b>ホーム</b></button>
+    <button type="button" data-bottom-tab="songs"><span aria-hidden="true">♫</span><b>曲一覧</b></button>
+    <button type="button" data-bottom-tab="logs"><span aria-hidden="true">▤</span><b>履歴</b></button>
+    <button type="button" data-bottom-tab="settings"><span aria-hidden="true">⚙</span><b>設定</b></button>
+  </nav>
+
+  <dialog id="pickDialog" class="pick-dialog">
+    <div class="result-stars" aria-hidden="true">✦　✦</div>
+    <span id="pickKind" class="pick-kind">OWL'S PICK</span>
+    <div class="result-owl" aria-hidden="true">◉▽◉</div>
+    <details id="randomConditionPanel" class="random-condition-panel" open>
+      <summary><span>条件を指定</span><small id="randomPoolCount">全曲から抽選</small><i>⌄</i></summary>
+      <div class="random-condition-grid">
+        <label><span>状態</span><select id="randomStatus"><option value="all">すべて</option><option>歌える</option><option>練習中</option><option>要確認</option></select></label>
+        <label><span>ジャンル</span><select id="randomGenre"><option value="all">すべて</option><option>J-POP</option><option>ボカロ</option><option>アニソン</option><option>ゲーム</option><option>童謡</option><option>歌謡曲</option></select></label>
+        <label><span>ボーカル属性</span><select id="randomVocal"><option value="all">すべて</option><option>男性ボーカル</option><option>女性ボーカル</option><option>男女混成</option></select></label>
+        <label><span>使用オケ</span><select id="randomKaraoke"><option value="all">すべて</option><option>歌っちゃ王</option><option>DAM</option><option>JOYSOUND</option><option>生音風カラオケ</option><option>自作</option><option>その他</option></select></label>
+        <label><span>候補数</span><select id="randomCount"><option value="1">1曲</option><option value="3">3曲</option><option value="5">5曲</option></select></label>
+        <label class="random-check"><input id="randomFavoriteOnly" type="checkbox"><span>お気に入りのみ</span></label>
+        <label class="random-check"><input id="randomOverdueOnly" type="checkbox"><span>半年以上歌っていない曲のみ</span></label>
+      </div>
+    </details>
+    <p id="pickLead">今夜の一曲は…</p>
+    <h2 id="pickedTitle"></h2>
+    <strong id="pickedArtist"></strong>
+    <div id="pickReason" class="pick-reason"></div>
+    <div id="pickCandidateList" class="pick-candidate-list" hidden></div>
+    <p id="pickEmptyHint" class="pick-empty-hint" hidden>条件を減らすか、別のジャンル・オケを選んでみてください。</p>
+    <div class="dialog-actions pick-primary-actions"><button id="retryPick">もう一度まわす</button><button id="closePick">閉じる</button></div>
+    <div class="pick-result-actions"><button id="pickAddSetlist" type="button">今日のセトリに追加</button><button id="pickAddDraft" type="button">セトリ案に追加</button><button id="pickShowSong" type="button">曲カードを見る</button></div>
+  </dialog>
+  <dialog id="songDialog" class="song-dialog">
+    <form id="songForm">
+      <div class="form-head"><div><span id="formEyebrow">NEW SONG</span><h2 id="songFormTitle">曲を追加</h2><p>曲の情報はいつでもあとから編集できます。</p></div><button id="closeSongForm" type="button" aria-label="曲フォームを閉じる">×</button></div>
+      <input id="songIndex" type="hidden" value="">
+      <div class="song-form-grid">
+        <label class="field wide"><span>曲タイトル <b>必須</b></span><input id="fieldTitle" name="title" required placeholder="例：アイドル"></label>
+        <label class="field"><span>タイトル読み</span><input id="fieldTitleReading" name="titleReading" placeholder="例：あいどる"></label>
+        <label class="field"><span>アーティスト <b>必須</b></span><input id="fieldArtist" name="artist" required placeholder="例：YOASOBI"></label>
+        <label class="field"><span>歌手名読み</span><input id="fieldArtistReading" name="artistReading" placeholder="例：よあそび"></label>
+        <fieldset class="field wide karaoke-options"><legend>普段使うオケ（複数選択可）</legend><div><label><input type="checkbox" name="karaokes" value="歌っちゃ王"><span>歌っちゃ王</span></label><label><input type="checkbox" name="karaokes" value="生音風カラオケ"><span>生音風カラオケ</span></label><label><input type="checkbox" name="karaokes" value="DAM"><span>DAM</span></label><label><input type="checkbox" name="karaokes" value="JOYSOUND"><span>JOYSOUND</span></label><label><input type="checkbox" name="karaokes" value="自作"><span>自作</span></label><label><input type="checkbox" name="karaokes" value="その他"><span>その他</span></label></div></fieldset>
+        <fieldset class="field wide genre-options"><legend>ジャンルタグ（複数選択可）</legend><div><label><input type="checkbox" name="genres" value="J-POP"><span>J-POP</span></label><label><input type="checkbox" name="genres" value="ボカロ"><span>ボカロ</span></label><label><input type="checkbox" name="genres" value="アニソン"><span>アニソン</span></label><label><input type="checkbox" name="genres" value="ゲーム"><span>ゲーム</span></label><label><input type="checkbox" name="genres" value="童謡"><span>童謡</span></label><label><input type="checkbox" name="genres" value="歌謡曲"><span>歌謡曲</span></label></div></fieldset>
+        <label class="field"><span>ボーカル属性</span><select id="fieldVocalType" name="vocalType"><option value="">未設定</option><option>男性ボーカル</option><option>女性ボーカル</option><option>男女混成</option></select></label>
+        <label class="field"><span>キー設定</span><select id="fieldKeySetting" name="keySetting"><option>原曲</option><option>+1</option><option>+2</option><option>+3</option><option>+4</option><option>+5</option><option>-1</option><option>-2</option><option>-3</option><option>-4</option><option>-5</option></select></label>
+        <label class="field"><span>状態</span><select id="fieldStatus" name="status"><option>歌える</option><option>練習中</option><option>要確認</option></select></label>
+        <label class="field"><span>季節</span><select id="fieldSeason" name="season"><option>春</option><option>夏</option><option>秋</option><option>冬</option><option selected>通年</option></select></label>
+        <label class="field"><span>歌唱回数</span><input id="fieldCount" name="count" type="number" min="0" value="0" inputmode="numeric"></label>
+        <label class="field"><span>最終歌唱日</span><input id="fieldLastSung" name="lastSung" type="date"></label>
+        <label class="check-field"><input id="fieldFavorite" name="favorite" type="checkbox"><span><b>♥</b> お気に入り</span></label>
+        <label class="field wide"><span>備考</span><textarea id="fieldNotes" name="notes" rows="3" placeholder="キー、歌い方、注意点など自由にメモ"></textarea></label>
+      </div>
+      <div class="form-actions"><button id="cancelSongForm" type="button">キャンセル</button><button type="submit">保存する</button></div>
+    </form>
+  </dialog>
+  <dialog id="deleteDialog" class="delete-dialog">
+    <div class="delete-icon" aria-hidden="true">!</div><span>DELETE SONG</span><h2>この曲を削除しますか？</h2><p id="deleteSongName"></p><small>この操作は元に戻せません。過去の歌枠に保存済みの記録は残ります。</small><div><button id="cancelDelete" type="button">キャンセル</button><button id="confirmDelete" type="button">削除する</button></div>
+  </dialog>
+  <dialog id="deleteDraftDialog" class="delete-dialog">
+    <div class="delete-icon" aria-hidden="true">!</div><span>DELETE SETLIST IDEA</span><h2>このセトリ案を削除しますか？</h2><p id="deleteDraftName"></p><small>この操作は元に戻せません。今日のセトリや過去のセトリは削除されません。</small><div><button id="cancelDraftDelete" type="button">キャンセル</button><button id="confirmDraftDelete" type="button">削除する</button></div>
+  </dialog>
+  <dialog id="setlistTargetDialog" class="song-dialog setlist-target-dialog">
+    <div class="setlist-target-inner">
+      <div class="form-head"><div><span>SETLIST TARGET</span><h2>追加先を選ぶ</h2><p>曲カードから追加するセトリを選択します。</p></div><button id="closeSetlistTarget" type="button" aria-label="追加先選択を閉じる">×</button></div>
+      <div class="setlist-target-song">
+        <small>対象曲</small>
+        <strong id="setlistTargetSongTitle">曲名</strong>
+        <span id="setlistTargetSongArtist">アーティスト</span>
+      </div>
+      <div class="setlist-target-section">
+        <h3>今日のセトリ</h3>
+        <button id="setlistTargetTodayButton" class="setlist-target-main" type="button">今日のセトリに追加</button>
+      </div>
+      <div class="setlist-target-section">
+        <h3>既存のセトリ案</h3>
+        <div id="setlistTargetDraftList" class="setlist-target-draft-list"></div>
+        <p id="setlistTargetDraftEmpty" class="setlist-target-empty">保存済みセトリ案はまだありません。</p>
+      </div>
+      <div class="setlist-target-section">
+        <h3>新しいセトリ案</h3>
+        <label class="field"><span>セトリ案名</span><input id="setlistTargetNewDraftName" type="text" placeholder="例：次回歌枠候補"></label>
+        <button id="setlistTargetCreateDraftButton" class="setlist-target-main" type="button">作成して追加</button>
+      </div>
+      <div class="form-actions"><button id="cancelSetlistTarget" type="button">キャンセル</button></div>
+    </div>
+  </dialog>
+  <dialog id="restoreDialog" class="delete-dialog restore-dialog">
+    <div class="delete-icon" aria-hidden="true">↺</div><span>RESTORE BACKUP</span><h2>バックアップを復元しますか？</h2><p id="restoreSummary"></p><small>現在ブラウザに保存されている曲データ、今日のセトリ、過去のセトリ、セトリ案、歌唱履歴、テーマ設定が上書きされる可能性があります。必要なら先にバックアップ保存してください。</small><div><button id="cancelRestore" type="button">キャンセル</button><button id="confirmRestore" type="button">復元する</button></div>
+  </dialog>
+  <dialog id="remoteSangDialog" class="remote-confirm-dialog">
+    <div class="remote-confirm-icon" aria-hidden="true">♪</div>
+    <span>REMOTE CHECK</span>
+    <h2>この曲を歌ったことにしますか？</h2>
+    <div class="remote-confirm-song">
+      <strong id="remoteSangDialogTitle">曲名</strong>
+      <small id="remoteSangDialogArtist">アーティスト</small>
+      <em id="remoteSangDialogKey">KEY -</em>
+    </div>
+    <div id="remoteSangWarning" class="remote-sang-warning" hidden></div>
+    <p>今回は確認UIだけです。まだ保存には接続していません。</p>
+    <div>
+      <button id="cancelRemoteSang" type="button">キャンセル</button>
+      <button id="confirmRemoteSang" type="button">確認する</button>
+    </div>
+  </dialog>
+  <dialog id="singRecordDialog" class="song-dialog">
+    <form id="singRecordForm">
+      <div class="form-head"><div><span>SINGING LOG</span><h2>歌唱を記録</h2><p id="singRecordSongLabel"></p></div><button id="closeSingRecord" type="button" aria-label="歌唱記録フォームを閉じる">×</button></div>
+      <input id="singRecordSongIndex" type="hidden">
+      <div class="song-form-grid">
+        <label class="field"><span>歌唱タイプ</span><select id="singRecordType"><option>配信</option><option>カラオケ</option><option>練習</option></select></label>
+        <label class="field"><span>使用オケ</span><select id="singRecordKaraoke"></select></label>
+        <label class="field wide"><span>メモ</span><textarea id="singRecordMemo" placeholder="例：友達とカラオケ / 高音注意 / サビだけ練習"></textarea></label>
+      </div>
+      <div class="form-actions"><button id="cancelSingRecord" type="button">キャンセル</button><button type="submit">記録する</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
