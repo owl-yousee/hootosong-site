@@ -30,7 +30,7 @@ const els = {
   singRecordDialog:$("#singRecordDialog"), singRecordForm:$("#singRecordForm"), singRecordSongLabel:$("#singRecordSongLabel"), singRecordSongIndex:$("#singRecordSongIndex"), singRecordType:$("#singRecordType"), singRecordKaraoke:$("#singRecordKaraoke"), singRecordMemo:$("#singRecordMemo"),
   songsTabView:$("#songsTabView"), logsTabView:$("#logsTabView"), settingsTabView:$("#settingsTabView"), bottomTabs:document.querySelectorAll("[data-bottom-tab]"),
   remoteView:$("#remoteView"), remoteModeButton:$("#remoteModeButton"), remoteSetlistCount:$("#remoteSetlistCount"), remoteSetlistSummary:$("#remoteSetlistSummary"), remoteSetlistList:$("#remoteSetlistList"), remoteSetlistEmpty:$("#remoteSetlistEmpty"), remoteCommitSetlist:$("#remoteCommitSetlist"), remoteLogCount:$("#remoteLogCount"), remoteLogList:$("#remoteLogList"), remoteLogToggle:$("#remoteLogToggle"), remoteLogEmpty:$("#remoteLogEmpty"), remoteRandomResult:$("#remoteRandomResult"), remoteSangDialog:$("#remoteSangDialog"), remoteSangDialogTitle:$("#remoteSangDialogTitle"), remoteSangDialogArtist:$("#remoteSangDialogArtist"), remoteSangDialogKey:$("#remoteSangDialogKey"), remoteSangWarning:$("#remoteSangWarning"),
-  supabaseUrlInput:$("#supabaseUrlInput"), supabaseKeyInput:$("#supabaseKeyInput"), testSupabaseConnectionButton:$("#testSupabaseConnectionButton"), testSupabaseStateButton:$("#testSupabaseStateButton"), supabaseAnonymousLoginButton:$("#supabaseAnonymousLoginButton"), createSupabaseWorkspaceButton:$("#createSupabaseWorkspaceButton"), testSupabaseWorkspaceStateButton:$("#testSupabaseWorkspaceStateButton"), createSupabasePairingCodeButton:$("#createSupabasePairingCodeButton"), consumeSupabasePairingCodeButton:$("#consumeSupabasePairingCodeButton"), supabasePairingCodeInput:$("#supabasePairingCodeInput"), supabasePairingCodeOutput:$("#supabasePairingCodeOutput"), supabasePairingExpiresOutput:$("#supabasePairingExpiresOutput"), uploadSupabaseTodaySetlistButton:$("#uploadSupabaseTodaySetlistButton"), previewSupabaseTodaySetlistButton:$("#previewSupabaseTodaySetlistButton"), applySupabaseTodaySetlistButton:$("#applySupabaseTodaySetlistButton"), supabaseTodaySetlistPreview:$("#supabaseTodaySetlistPreview"), supabaseTodaySetlistMeta:$("#supabaseTodaySetlistMeta"), supabaseConnectionStatus:$("#supabaseConnectionStatus"), supabaseStateTestStatus:$("#supabaseStateTestStatus"), supabaseAuthStatus:$("#supabaseAuthStatus"), supabaseWorkspaceStatus:$("#supabaseWorkspaceStatus"), supabasePairingStatus:$("#supabasePairingStatus"), supabaseTodaySetlistStatus:$("#supabaseTodaySetlistStatus"), supabaseTodaySetlistApplyStatus:$("#supabaseTodaySetlistApplyStatus"),
+  supabaseUrlInput:$("#supabaseUrlInput"), supabaseKeyInput:$("#supabaseKeyInput"), testSupabaseConnectionButton:$("#testSupabaseConnectionButton"), testSupabaseStateButton:$("#testSupabaseStateButton"), supabaseAnonymousLoginButton:$("#supabaseAnonymousLoginButton"), createSupabaseWorkspaceButton:$("#createSupabaseWorkspaceButton"), verifySupabaseWorkspaceButton:$("#verifySupabaseWorkspaceButton"), clearSupabaseWorkspaceButton:$("#clearSupabaseWorkspaceButton"), testSupabaseWorkspaceStateButton:$("#testSupabaseWorkspaceStateButton"), createSupabasePairingCodeButton:$("#createSupabasePairingCodeButton"), consumeSupabasePairingCodeButton:$("#consumeSupabasePairingCodeButton"), supabasePairingCodeInput:$("#supabasePairingCodeInput"), supabasePairingCodeOutput:$("#supabasePairingCodeOutput"), supabasePairingExpiresOutput:$("#supabasePairingExpiresOutput"), uploadSupabaseTodaySetlistButton:$("#uploadSupabaseTodaySetlistButton"), previewSupabaseTodaySetlistButton:$("#previewSupabaseTodaySetlistButton"), applySupabaseTodaySetlistButton:$("#applySupabaseTodaySetlistButton"), supabaseTodaySetlistPreview:$("#supabaseTodaySetlistPreview"), supabaseTodaySetlistMeta:$("#supabaseTodaySetlistMeta"), supabaseConnectionStatus:$("#supabaseConnectionStatus"), supabaseStateTestStatus:$("#supabaseStateTestStatus"), supabaseAuthStatus:$("#supabaseAuthStatus"), supabaseWorkspaceStatus:$("#supabaseWorkspaceStatus"), supabasePairingStatus:$("#supabasePairingStatus"), supabaseTodaySetlistStatus:$("#supabaseTodaySetlistStatus"), supabaseTodaySetlistApplyStatus:$("#supabaseTodaySetlistApplyStatus"),
   appInfoVersion:$("#appInfoVersion"), appInfoSongs:$("#appInfoSongs"), appInfoFavorites:$("#appInfoFavorites"), appInfoSingLogs:$("#appInfoSingLogs"), appInfoDrafts:$("#appInfoDrafts"), appInfoStreams:$("#appInfoStreams"),
   diagnosticPanel:$("#diagnosticPanel"), diagnosticContent:$("#diagnosticContent"), diagVersion:$("#diagVersion"), diagSongCount:$("#diagSongCount"), diagSingLogCount:$("#diagSingLogCount"), diagDraftCount:$("#diagDraftCount"), diagTodaySetlistCount:$("#diagTodaySetlistCount")
 };
@@ -621,6 +621,8 @@ const supabaseTodaySetlistStateKey="todaySetlist";
 const localTodaySetlistStorageKey="hooto-today-setlist";
 const beforeApplyTodaySetlistStorageKey="hootoSong.sync.beforeApply.todaySetlist";
 let supabaseTodaySetlistPreviewState=null;
+let verifiedSupabaseWorkspaceId="";
+let verifiedSupabaseWorkspaceUserId="";
 function firstSupabaseRpcRow(data){
   return Array.isArray(data)?data[0]:data;
 }
@@ -676,16 +678,30 @@ function restoreSupabaseConnectionSettings(){
 function savedSupabaseWorkspaceId(){
   return (localStorage.getItem(supabaseWorkspaceStorageKey)||"").trim();
 }
+function clearVerifiedSupabaseWorkspace(){
+  verifiedSupabaseWorkspaceId="";
+  verifiedSupabaseWorkspaceUserId="";
+}
+function markSupabaseWorkspaceVerified(workspaceId,userId){
+  verifiedSupabaseWorkspaceId=String(workspaceId||"");
+  verifiedSupabaseWorkspaceUserId=String(userId||"");
+}
+function verifiedSupabaseWorkspaceForUser(user){
+  const userId=String(user?.id||"");
+  if(!userId||!verifiedSupabaseWorkspaceId||verifiedSupabaseWorkspaceUserId!==userId)return "";
+  return verifiedSupabaseWorkspaceId;
+}
 function restoreSupabaseWorkspaceState(){
   const workspaceId=savedSupabaseWorkspaceId();
+  clearVerifiedSupabaseWorkspace();
   if(!workspaceId){
     setSupabaseWorkspaceStatus("workspace未作成 / 未ペアリング","idle");
     setSupabaseTodaySetlistMeta("workspace未選択 / revision 未取得","idle");
     return "";
   }
-  setSupabaseWorkspaceStatus("保存済みworkspace："+workspaceId,"success");
-  setSupabasePairingStatus("保存済みworkspaceを使用します："+workspaceId,"success");
-  setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 未取得","idle");
+  setSupabaseWorkspaceStatus("保存済みworkspaceがあります（未確認）："+workspaceId+"。先に匿名ログインしてworkspace確認を行ってください。","idle");
+  setSupabasePairingStatus("保存済みworkspaceがありますが、member確認前のためまだ使用しません。","idle");
+  setSupabaseTodaySetlistMeta("保存済みworkspace未確認 / revision 未取得","idle");
   return workspaceId;
 }
 function saveSupabaseConnectionSettings(){
@@ -704,6 +720,7 @@ function saveSupabaseConnectionSettings(){
 }
 function handleSupabaseConnectionSettingInput(){
   try{
+    clearVerifiedSupabaseWorkspace();
     saveSupabaseConnectionSettings();
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
@@ -717,6 +734,7 @@ function getSupabaseClientForTest(){
   if(!globalThis.supabase?.createClient)throw new Error("Supabase client を読み込めませんでした。ネットワークまたはCDN読み込みを確認してください。");
   const signature=url+"\n"+key;
   if(supabaseTestClient&&supabaseTestClientSignature===signature)return supabaseTestClient;
+  clearVerifiedSupabaseWorkspace();
   supabaseTestClient=globalThis.supabase.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
   supabaseTestClientSignature=signature;
   return supabaseTestClient;
@@ -742,6 +760,80 @@ async function currentSupabaseTestUser(client){
   const {data,error}=await client.auth.getUser();
   if(error&&!/session|missing/i.test(String(error.message||"")))throw error;
   return data?.user||null;
+}
+async function verifySavedSupabaseWorkspaceMembership(client=null,user=null,{silent=false}={}){
+  const activeClient=client||getSupabaseClientForTest();
+  const activeUser=user||await currentSupabaseTestUser(activeClient);
+  const workspaceId=savedSupabaseWorkspaceId();
+  clearVerifiedSupabaseWorkspace();
+  if(!workspaceId){
+    const message="workspace_id がありません。先にworkspace作成またはペアリングを完了してください。";
+    if(!silent){
+      setSupabaseWorkspaceStatus(message,"error");
+      setSupabaseTodaySetlistMeta("workspace未選択 / revision 未取得","error");
+    }
+    throw new Error(message);
+  }
+  if(!activeUser){
+    const message="保存済みworkspaceがありますが、未ログインのため確認できません。先に匿名ログインしてください。";
+    if(!silent){
+      setSupabaseWorkspaceStatus(message,"error");
+      setSupabasePairingStatus(message,"error");
+      setSupabaseTodaySetlistMeta("workspace未確認 / 先に匿名ログインしてください","error");
+    }
+    throw new Error(message);
+  }
+  const member=await activeClient.from("app_workspace_members").select("workspace_id, user_id, role").eq("workspace_id",workspaceId).eq("user_id",activeUser.id).maybeSingle();
+  if(member.error)throw member.error;
+  if(!member.data){
+    const message="保存済みworkspaceがありますが、現在のログインユーザーはmemberではありません。匿名ログインし直す、再ペアリングする、または新しいworkspaceを作成してください。";
+    if(!silent){
+      setSupabaseWorkspaceStatus(message+" workspace: "+workspaceId,"error");
+      setSupabasePairingStatus("member確認に失敗したため、このworkspaceではペアリングコードを発行しません。","error");
+      setSupabaseTodaySetlistMeta("workspace member未確認 / 操作を中止しました","error");
+    }
+    console.warn("HootoSong workspace membership not found:",{workspaceId,userId:activeUser.id});
+    throw new Error(message);
+  }
+  markSupabaseWorkspaceVerified(workspaceId,activeUser.id);
+  if(!silent){
+    setSupabaseWorkspaceStatus("workspace確認済み：このworkspaceを使用できます。workspace "+workspaceId+" / role "+(member.data.role||"member"),"success");
+    setSupabasePairingStatus("workspace確認済み：ペアリングコードを発行できます。workspace "+workspaceId,"success");
+    setSupabaseTodaySetlistMeta("確認済みworkspace："+workspaceId+" / revision 未取得","success");
+  }
+  console.info("HootoSong workspace membership verified:",{workspaceId,userId:activeUser.id,role:member.data.role});
+  return workspaceId;
+}
+async function verifySupabaseWorkspaceFromUi(){
+  if(els.verifySupabaseWorkspaceButton)els.verifySupabaseWorkspaceButton.disabled=true;
+  try{
+    const client=getSupabaseClientForTest();
+    const user=await currentSupabaseTestUser(client);
+    if(!user)throw new Error("先に匿名ログインしてください。");
+    return await verifySavedSupabaseWorkspaceMembership(client,user);
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    setSupabaseWorkspaceStatus("workspace確認失敗："+message,"error");
+    setSupabaseTodaySetlistMeta("workspace未確認 / 操作できません","error");
+    console.error("HootoSong workspace membership verify failed:",error);
+    return null;
+  }finally{
+    if(els.verifySupabaseWorkspaceButton)els.verifySupabaseWorkspaceButton.disabled=false;
+  }
+}
+function clearSavedSupabaseWorkspace(){
+  localStorage.removeItem(supabaseWorkspaceStorageKey);
+  clearVerifiedSupabaseWorkspace();
+  clearSupabaseTodaySetlistPreviewState("workspaceを解除したため反映できません。");
+  setSupabaseWorkspaceStatus("保存済みworkspace情報を解除しました。曲データや今日のセトリは削除していません。","idle");
+  setSupabasePairingStatus("workspace未選択です。必要なら再ペアリングまたはworkspace作成を行ってください。","idle");
+  setSupabaseTodaySetlistMeta("workspace未選択 / revision 未取得","idle");
+  console.info("HootoSong saved workspace cleared:",supabaseWorkspaceStorageKey);
+}
+async function workspaceIdForSupabaseDataSync(client,user){
+  const workspaceId=verifiedSupabaseWorkspaceForUser(user);
+  if(workspaceId)return workspaceId;
+  return await verifySavedSupabaseWorkspaceMembership(client,user,{silent:false});
 }
 async function testSupabaseStateRoundTrip(){
   setSupabaseStateTestStatus("sync_test 保存・読み戻し確認中...","checking");
@@ -785,6 +877,7 @@ async function signInSupabaseAnonymously(){
     const currentUser=await currentSupabaseTestUser(client);
     if(currentUser){
       setSupabaseAuthStatus("匿名ログイン済み："+currentUser.id,"success");
+      if(savedSupabaseWorkspaceId())await verifySavedSupabaseWorkspaceMembership(client,currentUser).catch(()=>null);
       return currentUser;
     }
     const {data,error}=await client.auth.signInAnonymously();
@@ -793,6 +886,7 @@ async function signInSupabaseAnonymously(){
     if(!user)throw new Error("匿名ログイン後のユーザー情報を取得できませんでした。");
     setSupabaseAuthStatus("匿名ログイン成功："+user.id,"success");
     console.info("HootoSong anonymous auth user:",user.id);
+    if(savedSupabaseWorkspaceId())await verifySavedSupabaseWorkspaceMembership(client,user).catch(()=>null);
     return user;
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
@@ -820,7 +914,8 @@ async function createSupabaseTestWorkspace(){
     const workspaceId=Array.isArray(data)?data[0]:data;
     if(!workspaceId)throw new Error("workspace_id が返りませんでした。");
     localStorage.setItem(supabaseWorkspaceStorageKey,workspaceId);
-    setSupabaseWorkspaceStatus("workspace作成成功："+workspaceId,"success");
+    markSupabaseWorkspaceVerified(workspaceId,user.id);
+    setSupabaseWorkspaceStatus("workspace作成成功・確認済み："+workspaceId,"success");
     setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 未取得","success");
     console.info("HootoSong test workspace created:",workspaceId);
     return workspaceId;
@@ -845,13 +940,7 @@ async function createSupabasePairingCode(){
       console.warn("HootoSong pairing code skipped:",message);
       return null;
     }
-    const workspaceId=savedSupabaseWorkspaceId();
-    if(!workspaceId){
-      const message="workspace_id がありません。先にテストworkspace作成を実行してください。";
-      setSupabasePairingStatus(message,"error");
-      console.warn("HootoSong pairing code skipped:",message);
-      return null;
-    }
+    const workspaceId=await workspaceIdForSupabaseDataSync(client,user);
     const {data,error}=await client.rpc("create_app_pairing_code",{target_workspace_id:workspaceId,valid_minutes:10});
     if(error)throw error;
     const row=firstSupabaseRpcRow(data);
@@ -897,8 +986,9 @@ async function consumeSupabasePairingCode(){
     const workspaceId=typeof row==="string"?row:pickSupabaseField(row,["workspace_id","workspaceId","target_workspace_id","targetWorkspaceId"]);
     if(!workspaceId)throw new Error("workspace_id が返りませんでした。");
     localStorage.setItem(supabaseWorkspaceStorageKey,workspaceId);
+    markSupabaseWorkspaceVerified(workspaceId,user.id);
     setSupabasePairingStatus("ペアリング成功：workspace "+workspaceId+" を保存しました。workspace版テスト保存で確認できます。","success");
-    setSupabaseWorkspaceStatus("子機参加済みworkspace："+workspaceId,"success");
+    setSupabaseWorkspaceStatus("子機参加済みworkspace確認済み："+workspaceId,"success");
     setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 未取得","success");
     console.info("HootoSong pairing consumed:",{workspaceId});
     return workspaceId;
@@ -925,11 +1015,6 @@ function readLocalTodaySetlistForUpload(){
   if(!normalized.songs.length)throw new Error("todaySetlist が空です。空データはSupabaseへアップロードしません。");
   return normalized;
 }
-function workspaceIdForSupabaseDataSync(){
-  const workspaceId=savedSupabaseWorkspaceId();
-  if(!workspaceId)throw new Error("workspace_id がありません。先に匿名ログイン後、workspace作成またはペアリングを完了してください。");
-  return workspaceId;
-}
 async function uploadSupabaseTodaySetlist(){
   setSupabaseTodaySetlistStatus("todaySetlist アップロード中...","checking");
   setSupabaseTodaySetlistMeta("revision / updated_at 確認中","checking");
@@ -940,7 +1025,7 @@ async function uploadSupabaseTodaySetlist(){
     const client=getSupabaseClientForTest();
     const user=await currentSupabaseTestUser(client);
     if(!user)throw new Error("未ログインです。先に匿名ログインしてください。");
-    const workspaceId=workspaceIdForSupabaseDataSync();
+    const workspaceId=await workspaceIdForSupabaseDataSync(client,user);
     setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 確認中","checking");
     const setlist=readLocalTodaySetlistForUpload();
     const savedAt=new Date().toISOString();
@@ -976,7 +1061,7 @@ async function previewSupabaseTodaySetlist(){
     const client=getSupabaseClientForTest();
     const user=await currentSupabaseTestUser(client);
     if(!user)throw new Error("未ログインです。先に匿名ログインしてください。");
-    const workspaceId=workspaceIdForSupabaseDataSync();
+    const workspaceId=await workspaceIdForSupabaseDataSync(client,user);
     setSupabaseTodaySetlistMeta("参照中workspace："+workspaceId+" / revision 取得中","checking");
     const readBack=await client.from("app_workspace_state").select("key, value, updated_at, updated_by, updated_by_label, revision").eq("workspace_id",workspaceId).eq("key",supabaseTodaySetlistStateKey).maybeSingle();
     if(readBack.error)throw readBack.error;
@@ -1012,8 +1097,8 @@ async function previewSupabaseTodaySetlist(){
 function validateSupabaseTodaySetlistPreviewForApply(){
   const state=supabaseTodaySetlistPreviewState;
   if(!state?.row)throw new Error("プレビューがありません。先にSupabaseから読み込み確認してください。");
-  const currentWorkspaceId=savedSupabaseWorkspaceId();
-  if(!currentWorkspaceId)throw new Error("workspace_id がありません。先にworkspace作成またはペアリングを完了してください。");
+  const currentWorkspaceId=verifiedSupabaseWorkspaceId;
+  if(!currentWorkspaceId)throw new Error("workspace確認が完了していません。先に匿名ログインして保存済みworkspace確認を行ってください。");
   if(state.workspaceId!==currentWorkspaceId)throw new Error("workspaceが一致しません。読み込み確認をやり直してください。");
   const row=state.row;
   if(row.key!==supabaseTodaySetlistStateKey)throw new Error("todaySetlistではないデータです。");
@@ -1091,13 +1176,7 @@ async function testSupabaseWorkspaceStateRoundTrip(){
       console.warn("HootoSong workspace_sync_test skipped:",message);
       return;
     }
-    const workspaceId=localStorage.getItem(supabaseWorkspaceStorageKey)||"";
-    if(!workspaceId){
-      const message="workspace_id がありません。先にテストworkspaceを作成してください。";
-      setSupabaseWorkspaceStatus(message,"error");
-      console.warn("HootoSong workspace_sync_test skipped:",message);
-      return;
-    }
+    const workspaceId=await workspaceIdForSupabaseDataSync(client,user);
     const stateKey="workspace_sync_test";
     const savedAt=new Date().toISOString();
     const value={syncTest:true,phase:"3G",mode:"workspace",savedAt};
@@ -1285,6 +1364,8 @@ els.testSupabaseConnectionButton?.addEventListener("click",testSupabaseConnectio
 els.testSupabaseStateButton?.addEventListener("click",testSupabaseStateRoundTrip);
 els.supabaseAnonymousLoginButton?.addEventListener("click",signInSupabaseAnonymously);
 els.createSupabaseWorkspaceButton?.addEventListener("click",createSupabaseTestWorkspace);
+els.verifySupabaseWorkspaceButton?.addEventListener("click",verifySupabaseWorkspaceFromUi);
+els.clearSupabaseWorkspaceButton?.addEventListener("click",clearSavedSupabaseWorkspace);
 els.testSupabaseWorkspaceStateButton?.addEventListener("click",testSupabaseWorkspaceStateRoundTrip);
 els.createSupabasePairingCodeButton?.addEventListener("click",createSupabasePairingCode);
 els.consumeSupabasePairingCodeButton?.addEventListener("click",consumeSupabasePairingCode);
