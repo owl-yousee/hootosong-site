@@ -334,6 +334,13 @@
           <div id="supabaseSetlistDraftsStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">setlistDrafts 未実行</div>
           <div id="supabaseSetlistDraftsMeta" class="supabase-connection-status is-idle">件数 / revision / updated_at 未取得</div>
           <pre id="supabaseSetlistDraftsPreview" class="supabase-today-preview" aria-label="setlistDrafts 読み込みプレビュー">読み込みプレビューはまだありません。</pre>
+          <div id="supabaseSetlistDraftsCompare" class="supabase-connection-status is-idle" role="status" aria-live="polite">プレビュー読み込み後に比較結果を表示します。</div>
+          <div class="supabase-today-actions">
+            <button id="applySupabaseSetlistDraftsButton" type="button" disabled>プレビューを保存セトリ案へ反映</button>
+            <button id="restoreBeforeApplySetlistDraftsButton" type="button" disabled>反映前データを復元</button>
+            <button id="deleteBeforeApplySetlistDraftsButton" type="button" disabled>反映前データを削除</button>
+          </div>
+          <div id="supabaseSetlistDraftsApplyStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">反映未実行</div>
         </div>
       </section>
 

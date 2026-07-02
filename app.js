@@ -736,7 +736,9 @@ const supabaseTodaySetlistStateKey="todaySetlist";
 const supabaseSetlistDraftsStateKey="setlistDrafts";
 const localTodaySetlistStorageKey="hooto-today-setlist";
 const beforeApplyTodaySetlistStorageKey="hootoSong.sync.beforeApply.todaySetlist";
+const beforeApplySetlistDraftsStorageKey="hootoSong.sync.beforeApply.setlistDrafts";
 let supabaseTodaySetlistPreviewState=null;
+let supabaseSetlistDraftsPreviewState=null;
 let verifiedSupabaseWorkspaceId="";
 let verifiedSupabaseWorkspaceUserId="";
 function firstSupabaseRpcRow(data){
@@ -1248,6 +1250,28 @@ function setSupabaseSetlistDraftsPreview(value){
   if(!preview)return;
   preview.textContent=typeof value==="string"?value:JSON.stringify(value,null,2);
 }
+function setSupabaseSetlistDraftsCompare(message,type="idle"){
+  const compare=$("#supabaseSetlistDraftsCompare");
+  if(!compare)return;
+  compare.textContent=message;
+  compare.className="supabase-connection-status is-"+type;
+}
+function setSupabaseSetlistDraftsApplyStatus(message,type="idle"){
+  const status=$("#supabaseSetlistDraftsApplyStatus");
+  if(!status)return;
+  status.textContent=message;
+  status.className="supabase-connection-status is-"+type;
+}
+function setSupabaseSetlistDraftsApplyEnabled(enabled){
+  const button=$("#applySupabaseSetlistDraftsButton");
+  if(button)button.disabled=!enabled;
+}
+function setSupabaseSetlistDraftsRestoreEnabled(enabled){
+  const restoreButton=$("#restoreBeforeApplySetlistDraftsButton");
+  const deleteButton=$("#deleteBeforeApplySetlistDraftsButton");
+  if(restoreButton)restoreButton.disabled=!enabled;
+  if(deleteButton)deleteButton.disabled=!enabled;
+}
 function readLocalSetlistDraftsForUpload(){
   let parsed;
   try{
@@ -1263,6 +1287,173 @@ function readLocalSetlistDraftsForUpload(){
 function setlistDraftsPreviewCount(row){
   const data=row?.value?.data;
   return Array.isArray(data)?data.length:0;
+}
+function readLocalSetlistDraftsForApply(){
+  let parsed;
+  try{
+    parsed=JSON.parse(localStorage.getItem("hooto-draft-setlists")||"[]");
+  }catch(error){
+    throw new Error("localStorage の保存セトリ案をJSONとして読めませんでした。");
+  }
+  if(!Array.isArray(parsed))throw new Error("保存セトリ案データが配列ではありません。");
+  return parsed.map(normalizeDraft);
+}
+function setlistDraftTimestampValue(value){
+  const time=new Date(value||"").getTime();
+  return Number.isNaN(time)?null:time;
+}
+function setlistDraftSignature(draft){
+  return JSON.stringify(normalizeDraft(draft));
+}
+function buildSetlistDraftsApplyPlan(remoteDrafts,localDrafts){
+  const localById=new Map(localDrafts.map(draft=>[draft.id,draft]));
+  const remoteIds=new Set();
+  const add=[],update=[],keep=[],localOnly=[],conflict=[];
+  for(const remoteDraft of remoteDrafts){
+    const id=String(remoteDraft.id||"");
+    if(!id){conflict.push({draft:remoteDraft,reason:"missing-id"});continue;}
+    if(remoteIds.has(id)){conflict.push({draft:remoteDraft,reason:"duplicate-remote-id"});continue;}
+    remoteIds.add(id);
+    const localDraft=localById.get(id);
+    if(!localDraft){add.push(remoteDraft);continue;}
+    const remoteTime=setlistDraftTimestampValue(remoteDraft.updatedAt);
+    const localTime=setlistDraftTimestampValue(localDraft.updatedAt);
+    if(remoteTime!==null&&localTime!==null){
+      if(remoteTime>localTime)update.push({local:localDraft,remote:remoteDraft});
+      else keep.push({local:localDraft,remote:remoteDraft,reason:remoteTime===localTime?"same-or-equal-time":"local-newer"});
+      continue;
+    }
+    if(setlistDraftSignature(remoteDraft)===setlistDraftSignature(localDraft))keep.push({local:localDraft,remote:remoteDraft,reason:"same-content"});
+    else conflict.push({local:localDraft,remote:remoteDraft,reason:"unknown-updatedAt"});
+  }
+  for(const localDraft of localDrafts){
+    if(!remoteIds.has(localDraft.id))localOnly.push(localDraft);
+  }
+  return {add,update,keep,localOnly,conflict,localCount:localDrafts.length,previewCount:remoteDrafts.length};
+}
+function formatSetlistDraftsApplyPlan(plan){
+  return [
+    "ローカル件数: "+plan.localCount,
+    "プレビュー件数: "+plan.previewCount,
+    "追加予定: "+plan.add.length,
+    "更新予定: "+plan.update.length,
+    "維持予定: "+plan.keep.length,
+    "ローカルのみ: "+plan.localOnly.length,
+    "自動上書きしない: "+(plan.localOnly.length+plan.conflict.length),
+    "衝突/判定不能: "+plan.conflict.length
+  ].join(" / ");
+}
+function refreshSetlistDraftsApplyPlan(){
+  try{
+    if(!supabaseSetlistDraftsPreviewState){
+      setSupabaseSetlistDraftsCompare("プレビュー読み込み後に比較結果を表示します。","idle");
+      setSupabaseSetlistDraftsApplyEnabled(false);
+      return null;
+    }
+    const localDrafts=readLocalSetlistDraftsForApply();
+    const plan=buildSetlistDraftsApplyPlan(supabaseSetlistDraftsPreviewState.drafts,localDrafts);
+    supabaseSetlistDraftsPreviewState.plan=plan;
+    setSupabaseSetlistDraftsCompare(formatSetlistDraftsApplyPlan(plan),plan.conflict.length?"error":"success");
+    setSupabaseSetlistDraftsApplyEnabled(!plan.conflict.length&&plan.add.length+plan.update.length>0);
+    return plan;
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    setSupabaseSetlistDraftsCompare("比較失敗："+message,"error");
+    setSupabaseSetlistDraftsApplyEnabled(false);
+    console.error("HootoSong setlistDrafts compare failed:",error);
+    return null;
+  }
+}
+function readBeforeApplySetlistDraftsBackup(){
+  const raw=localStorage.getItem(beforeApplySetlistDraftsStorageKey);
+  if(!raw)return null;
+  try{
+    const parsed=JSON.parse(raw);
+    return parsed&&typeof parsed==="object"?parsed:null;
+  }catch(error){
+    console.warn("HootoSong before-apply setlistDrafts backup parse failed:",error);
+    return {parseError:error};
+  }
+}
+function updateBeforeApplySetlistDraftsRestoreUi(){
+  const backup=readBeforeApplySetlistDraftsBackup();
+  const hasBackup=!!backup&&!backup.parseError&&Array.isArray(backup.data);
+  setSupabaseSetlistDraftsRestoreEnabled(hasBackup);
+  return hasBackup;
+}
+function applySupabaseSetlistDraftsPreview(){
+  setSupabaseSetlistDraftsApplyStatus("反映前チェック中...","checking");
+  try{
+    if(!supabaseSetlistDraftsPreviewState)throw new Error("プレビューがありません。先にSupabaseから保存セトリ案をプレビュー読み込みしてください。");
+    const localDrafts=readLocalSetlistDraftsForApply();
+    const plan=buildSetlistDraftsApplyPlan(supabaseSetlistDraftsPreviewState.drafts,localDrafts);
+    if(plan.conflict.length)throw new Error("衝突または判定不能な保存セトリ案があります。今回は自動上書きしません。");
+    if(plan.add.length+plan.update.length===0)throw new Error("追加または更新できる保存セトリ案がありません。");
+    const ok=confirm("Supabaseプレビューの保存セトリ案をローカルへ反映します。\n\n追加予定: "+plan.add.length+"\n更新予定: "+plan.update.length+"\nローカルのみ: "+plan.localOnly.length+"（削除しません）\n\n反映前にバックアップを保存します。よろしいですか？");
+    if(!ok){setSupabaseSetlistDraftsApplyStatus("反映をキャンセルしました。","idle");return;}
+    const now=new Date().toISOString();
+    const backup={savedAt:now,createdAt:now,reason:"before-apply-setlistDrafts",sourceRevision:supabaseSetlistDraftsPreviewState.row?.revision??null,sourceUpdatedAt:supabaseSetlistDraftsPreviewState.row?.updated_at||null,workspaceId:supabaseSetlistDraftsPreviewState.workspaceId||"",localCount:localDrafts.length,previewCount:supabaseSetlistDraftsPreviewState.drafts.length,plan:{add:plan.add.length,update:plan.update.length,keep:plan.keep.length,localOnly:plan.localOnly.length,conflict:plan.conflict.length},data:localDrafts};
+    localStorage.setItem(beforeApplySetlistDraftsStorageKey,JSON.stringify(backup));
+    const merged=localDrafts.map(draft=>{
+      const found=plan.update.find(item=>item.local.id===draft.id);
+      return found?found.remote:draft;
+    });
+    plan.add.forEach(draft=>merged.push(draft));
+    draftSetlists=merged.map(normalizeDraft);
+    saveDrafts();
+    renderDrafts();
+    renderSetlistTargetDrafts();
+    renderAppInfo();
+    const finalCount=draftSetlists.length;
+    setSupabaseSetlistDraftsApplyStatus("反映成功：追加 "+plan.add.length+" / 更新 "+plan.update.length+" / 最終件数 "+finalCount,"success");
+    refreshSetlistDraftsApplyPlan();
+    updateBeforeApplySetlistDraftsRestoreUi();
+    console.info("HootoSong setlistDrafts preview applied:",{added:plan.add.length,updated:plan.update.length,finalCount});
+    showToast("保存セトリ案へ反映しました");
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    setSupabaseSetlistDraftsApplyStatus("反映失敗："+message,"error");
+    console.error("HootoSong setlistDrafts apply failed:",error);
+  }
+}
+function restoreBeforeApplySetlistDrafts(){
+  setSupabaseSetlistDraftsApplyStatus("復元前チェック中...","checking");
+  try{
+    const backup=readBeforeApplySetlistDraftsBackup();
+    if(!backup)throw new Error("反映前バックアップがありません。");
+    if(backup.parseError)throw new Error("反映前バックアップを読み取れません。");
+    if(!Array.isArray(backup.data))throw new Error("反映前バックアップの data が配列ではありません。");
+    const ok=confirm("保存セトリ案を反映前バックアップへ戻します。Supabaseへは自動アップロードしません。よろしいですか？");
+    if(!ok){setSupabaseSetlistDraftsApplyStatus("復元をキャンセルしました。","idle");return;}
+    draftSetlists=backup.data.map(normalizeDraft);
+    saveDrafts();
+    renderDrafts();
+    renderSetlistTargetDrafts();
+    renderAppInfo();
+    setSupabaseSetlistDraftsApplyStatus("復元成功：反映前の保存セトリ案へ戻しました。件数 "+draftSetlists.length,"success");
+    refreshSetlistDraftsApplyPlan();
+    updateBeforeApplySetlistDraftsRestoreUi();
+    console.info("HootoSong setlistDrafts backup restored:",{count:draftSetlists.length});
+    showToast("反映前の保存セトリ案に戻しました");
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    setSupabaseSetlistDraftsApplyStatus("復元失敗："+message,"error");
+    console.error("HootoSong setlistDrafts restore failed:",error);
+  }
+}
+function deleteBeforeApplySetlistDraftsBackup(){
+  const backup=readBeforeApplySetlistDraftsBackup();
+  if(!backup||backup.parseError){
+    setSupabaseSetlistDraftsApplyStatus("削除できる反映前バックアップがありません。","idle");
+    updateBeforeApplySetlistDraftsRestoreUi();
+    return;
+  }
+  const ok=confirm("setlistDrafts の反映前バックアップだけを削除します。保存セトリ案本体は変更しません。よろしいですか？");
+  if(!ok){setSupabaseSetlistDraftsApplyStatus("反映前バックアップ削除をキャンセルしました。","idle");return;}
+  localStorage.removeItem(beforeApplySetlistDraftsStorageKey);
+  updateBeforeApplySetlistDraftsRestoreUi();
+  setSupabaseSetlistDraftsApplyStatus("反映前バックアップを削除しました。","success");
+  console.info("HootoSong before-apply setlistDrafts backup deleted.");
 }
 async function uploadSupabaseSetlistDrafts(){
   setSupabaseSetlistDraftsStatus("保存セトリ案アップロード中...","checking");
@@ -1305,6 +1496,9 @@ async function previewSupabaseSetlistDrafts(){
   setSupabaseSetlistDraftsPreview("プレビュー読み込み中...");
   const previewButton=$("#previewSupabaseSetlistDraftsButton");
   if(previewButton)previewButton.disabled=true;
+  supabaseSetlistDraftsPreviewState=null;
+  setSupabaseSetlistDraftsApplyEnabled(false);
+  setSupabaseSetlistDraftsCompare("プレビュー読み込み後に比較結果を表示します。","idle");
   try{
     const client=getSupabaseClientForTest();
     const user=await currentSupabaseTestUser(client);
@@ -1329,6 +1523,8 @@ async function previewSupabaseSetlistDrafts(){
     setSupabaseSetlistDraftsStatus("読み込み成功：localStorageへは反映していません。","success");
     setSupabaseSetlistDraftsMeta("件数 "+count+" / workspace "+workspaceId+" / revision "+readBack.data.revision+" / updated_at "+formatSupabaseTimestamp(readBack.data.updated_at)+" / "+(readBack.data.updated_by_label||"labelなし"),"success");
     setSupabaseSetlistDraftsPreview(readBack.data);
+    supabaseSetlistDraftsPreviewState={workspaceId,row:readBack.data,drafts:value.data.map(normalizeDraft),plan:null};
+    refreshSetlistDraftsApplyPlan();
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
     const hint=/permission|policy|rls|jwt|auth|session|unauthorized|forbidden|row-level/i.test(message)?"ログイン状態、workspace member、RLS、policyを確認してください。":"workspace_id、Supabase接続設定、app_workspace_stateを確認してください。";
@@ -1621,6 +1817,9 @@ els.previewSupabaseTodaySetlistButton?.addEventListener("click",previewSupabaseT
 els.applySupabaseTodaySetlistButton?.addEventListener("click",applySupabaseTodaySetlistPreview);
 $("#uploadSupabaseSetlistDraftsButton")?.addEventListener("click",uploadSupabaseSetlistDrafts);
 $("#previewSupabaseSetlistDraftsButton")?.addEventListener("click",previewSupabaseSetlistDrafts);
+$("#applySupabaseSetlistDraftsButton")?.addEventListener("click",applySupabaseSetlistDraftsPreview);
+$("#restoreBeforeApplySetlistDraftsButton")?.addEventListener("click",restoreBeforeApplySetlistDrafts);
+$("#deleteBeforeApplySetlistDraftsButton")?.addEventListener("click",deleteBeforeApplySetlistDraftsBackup);
 $("#restoreBeforeApplyTodaySetlistButton")?.addEventListener("click",restoreBeforeApplyTodaySetlist);
 $("#deleteBeforeApplyTodaySetlistButton")?.addEventListener("click",deleteBeforeApplyTodaySetlistBackup);
 $("#exportCsvButton").addEventListener("click",exportSongsCSV);
@@ -1634,6 +1833,7 @@ els.csv.addEventListener("change",async event=>{const file=event.target.files[0]
 restoreSupabaseConnectionSettings();
 restoreSupabaseWorkspaceState();
 updateBeforeApplyTodaySetlistRestoreUi();
+updateBeforeApplySetlistDraftsRestoreUi();
 els.streamDate.value=todayString();
 saveSongs();
 applyTheme(loadTheme());
