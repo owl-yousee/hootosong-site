@@ -733,6 +733,7 @@ const supabaseWorkspaceStorageKey="hootoSong.sync.workspaceId";
 const supabaseUrlStorageKey="hootoSong.sync.supabaseUrl";
 const supabasePublicKeyStorageKey="hootoSong.sync.supabasePublicKey";
 const supabaseTodaySetlistStateKey="todaySetlist";
+const supabaseSetlistDraftsStateKey="setlistDrafts";
 const localTodaySetlistStorageKey="hooto-today-setlist";
 const beforeApplyTodaySetlistStorageKey="hootoSong.sync.beforeApply.todaySetlist";
 let supabaseTodaySetlistPreviewState=null;
@@ -1230,6 +1231,115 @@ async function previewSupabaseTodaySetlist(){
     if(els.previewSupabaseTodaySetlistButton)els.previewSupabaseTodaySetlistButton.disabled=false;
   }
 }
+function setSupabaseSetlistDraftsStatus(message,type="idle"){
+  const status=$("#supabaseSetlistDraftsStatus");
+  if(!status)return;
+  status.textContent=message;
+  status.className="supabase-connection-status is-"+type;
+}
+function setSupabaseSetlistDraftsMeta(message,type="idle"){
+  const meta=$("#supabaseSetlistDraftsMeta");
+  if(!meta)return;
+  meta.textContent=message;
+  meta.className="supabase-connection-status is-"+type;
+}
+function setSupabaseSetlistDraftsPreview(value){
+  const preview=$("#supabaseSetlistDraftsPreview");
+  if(!preview)return;
+  preview.textContent=typeof value==="string"?value:JSON.stringify(value,null,2);
+}
+function readLocalSetlistDraftsForUpload(){
+  let parsed;
+  try{
+    parsed=JSON.parse(localStorage.getItem("hooto-draft-setlists")||"[]");
+  }catch(error){
+    throw new Error("localStorage の保存セトリ案をJSONとして読めませんでした。");
+  }
+  if(!Array.isArray(parsed))throw new Error("保存セトリ案データが配列ではありません。アップロードを中止します。");
+  const normalized=parsed.map(normalizeDraft);
+  if(!normalized.length)throw new Error("保存セトリ案が0件です。空配列での上書きを避けるため、今回はアップロードしません。");
+  return normalized;
+}
+function setlistDraftsPreviewCount(row){
+  const data=row?.value?.data;
+  return Array.isArray(data)?data.length:0;
+}
+async function uploadSupabaseSetlistDrafts(){
+  setSupabaseSetlistDraftsStatus("保存セトリ案アップロード中...","checking");
+  setSupabaseSetlistDraftsMeta("件数 / revision / updated_at 確認中","checking");
+  setSupabaseSetlistDraftsPreview("アップロード中...");
+  const uploadButton=$("#uploadSupabaseSetlistDraftsButton");
+  if(uploadButton)uploadButton.disabled=true;
+  try{
+    const client=getSupabaseClientForTest();
+    const user=await currentSupabaseTestUser(client);
+    if(!user)throw new Error("未ログインです。先に匿名ログインしてください。");
+    const workspaceId=await workspaceIdForSupabaseDataSync(client,user);
+    const drafts=readLocalSetlistDraftsForUpload();
+    const savedAt=new Date().toISOString();
+    const value={schemaVersion:1,kind:supabaseSetlistDraftsStateKey,savedAt,sourceDevice:"PC parent",data:drafts};
+    const existing=await client.from("app_workspace_state").select("revision").eq("workspace_id",workspaceId).eq("key",supabaseSetlistDraftsStateKey).maybeSingle();
+    if(existing.error)throw existing.error;
+    const revision=Number(existing.data?.revision||0)+1;
+    const payload={workspace_id:workspaceId,key:supabaseSetlistDraftsStateKey,value,updated_by:user.id,updated_by_label:"hootosong-sync-phase-3n-setlist-drafts",revision};
+    const saved=await client.from("app_workspace_state").upsert(payload,{onConflict:"workspace_id,key"}).select("key, value, updated_at, updated_by, updated_by_label, revision").single();
+    if(saved.error)throw saved.error;
+    console.info("HootoSong setlistDrafts uploaded:",{workspaceId,revision:saved.data.revision,updatedAt:saved.data.updated_at,count:drafts.length});
+    setSupabaseSetlistDraftsStatus("アップロード成功：保存セトリ案をSupabaseへ保存しました。","success");
+    setSupabaseSetlistDraftsMeta("件数 "+drafts.length+" / workspace "+workspaceId+" / revision "+saved.data.revision+" / updated_at "+formatSupabaseTimestamp(saved.data.updated_at),"success");
+    setSupabaseSetlistDraftsPreview(saved.data);
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    const hint=/permission|policy|rls|jwt|auth|session|unauthorized|forbidden|row-level/i.test(message)?"ログイン状態、workspace member、RLS、policyを確認してください。":"保存セトリ案、workspace_id、Supabase接続設定を確認してください。";
+    setSupabaseSetlistDraftsStatus("アップロード失敗："+hint+" "+message,"error");
+    setSupabaseSetlistDraftsMeta("件数 / revision / updated_at 未更新","error");
+    setSupabaseSetlistDraftsPreview("アップロード失敗：\n"+message);
+    console.error("HootoSong setlistDrafts upload failed:",error);
+  }finally{
+    if(uploadButton)uploadButton.disabled=false;
+  }
+}
+async function previewSupabaseSetlistDrafts(){
+  setSupabaseSetlistDraftsStatus("保存セトリ案プレビュー読み込み中...","checking");
+  setSupabaseSetlistDraftsMeta("件数 / revision / updated_at 取得中","checking");
+  setSupabaseSetlistDraftsPreview("プレビュー読み込み中...");
+  const previewButton=$("#previewSupabaseSetlistDraftsButton");
+  if(previewButton)previewButton.disabled=true;
+  try{
+    const client=getSupabaseClientForTest();
+    const user=await currentSupabaseTestUser(client);
+    if(!user)throw new Error("未ログインです。先に匿名ログインしてください。");
+    const workspaceId=await workspaceIdForSupabaseDataSync(client,user);
+    const readBack=await client.from("app_workspace_state").select("key, value, updated_at, updated_by, updated_by_label, revision").eq("workspace_id",workspaceId).eq("key",supabaseSetlistDraftsStateKey).maybeSingle();
+    if(readBack.error)throw readBack.error;
+    if(!readBack.data){
+      const message="まだSupabaseに保存セトリ案 setlistDrafts がありません。";
+      setSupabaseSetlistDraftsStatus(message,"idle");
+      setSupabaseSetlistDraftsMeta("workspace "+workspaceId+" / revision 未取得","idle");
+      setSupabaseSetlistDraftsPreview(message+"\n参照中workspace："+workspaceId);
+      console.info("HootoSong setlistDrafts preview empty:",{workspaceId});
+      return;
+    }
+    const value=readBack.data.value;
+    if(!value||typeof value!=="object")throw new Error("value がありません。");
+    if(value.kind!==supabaseSetlistDraftsStateKey)throw new Error("setlistDrafts ではないデータです。");
+    if(!Array.isArray(value.data))throw new Error("setlistDrafts の data が配列ではありません。localStorageへは反映しません。");
+    const count=setlistDraftsPreviewCount(readBack.data);
+    console.info("HootoSong setlistDrafts preview loaded:",{workspaceId,revision:readBack.data.revision,updatedAt:readBack.data.updated_at,count});
+    setSupabaseSetlistDraftsStatus("読み込み成功：localStorageへは反映していません。","success");
+    setSupabaseSetlistDraftsMeta("件数 "+count+" / workspace "+workspaceId+" / revision "+readBack.data.revision+" / updated_at "+formatSupabaseTimestamp(readBack.data.updated_at)+" / "+(readBack.data.updated_by_label||"labelなし"),"success");
+    setSupabaseSetlistDraftsPreview(readBack.data);
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    const hint=/permission|policy|rls|jwt|auth|session|unauthorized|forbidden|row-level/i.test(message)?"ログイン状態、workspace member、RLS、policyを確認してください。":"workspace_id、Supabase接続設定、app_workspace_stateを確認してください。";
+    setSupabaseSetlistDraftsStatus("読み込み失敗："+hint+" "+message,"error");
+    setSupabaseSetlistDraftsMeta("件数 / revision / updated_at 未取得","error");
+    setSupabaseSetlistDraftsPreview("読み込み失敗：\n"+message);
+    console.error("HootoSong setlistDrafts preview failed:",error);
+  }finally{
+    if(previewButton)previewButton.disabled=false;
+  }
+}
 function validateSupabaseTodaySetlistPreviewForApply(){
   const state=supabaseTodaySetlistPreviewState;
   if(!state?.row)throw new Error("プレビューがありません。先にSupabaseから読み込み確認してください。");
@@ -1509,6 +1619,8 @@ els.consumeSupabasePairingCodeButton?.addEventListener("click",consumeSupabasePa
 els.uploadSupabaseTodaySetlistButton?.addEventListener("click",uploadSupabaseTodaySetlist);
 els.previewSupabaseTodaySetlistButton?.addEventListener("click",previewSupabaseTodaySetlist);
 els.applySupabaseTodaySetlistButton?.addEventListener("click",applySupabaseTodaySetlistPreview);
+$("#uploadSupabaseSetlistDraftsButton")?.addEventListener("click",uploadSupabaseSetlistDrafts);
+$("#previewSupabaseSetlistDraftsButton")?.addEventListener("click",previewSupabaseSetlistDrafts);
 $("#restoreBeforeApplyTodaySetlistButton")?.addEventListener("click",restoreBeforeApplyTodaySetlist);
 $("#deleteBeforeApplyTodaySetlistButton")?.addEventListener("click",deleteBeforeApplyTodaySetlistBackup);
 $("#exportCsvButton").addEventListener("click",exportSongsCSV);

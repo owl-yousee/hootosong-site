@@ -120,6 +120,7 @@
           <label class="select-wrap"><span class="sr-only">ボーカル属性</span><select id="vocalFilter"><option value="all">すべてのボーカル属性</option><option>男性ボーカル</option><option>女性ボーカル</option><option>男女混成</option></select></label>
           <label class="select-wrap sort-select"><span class="sr-only">並べ替え</span><select id="sortSelect"><option value="last-desc">最終歌唱日（新しい順）</option><option value="last-asc">最終歌唱日（古い順）</option><option value="count-desc">歌唱回数（多い順）</option><option value="count-asc">歌唱回数（少ない順）</option><option value="title">曲名（あいうえお順）</option></select></label>
         </div>
+
       </section>
 
       <section class="collection">
@@ -312,6 +313,27 @@
             <div id="supabaseTodaySetlistRestoreStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">復元未実行</div>
           </div>
           </div>
+        </div>
+        <div class="supabase-today-panel">
+          <div class="supabase-today-head">
+            <div>
+              <strong>setlistDrafts 手動同期</strong>
+              <span>保存セトリ案をPC親機からアップロードし、子機側では読み込み確認だけ行います。今回はlocalStorageへ反映しません。</span>
+            </div>
+            <div class="supabase-today-actions">
+              <button id="uploadSupabaseSetlistDraftsButton" type="button">保存セトリ案をアップロード</button>
+              <button id="previewSupabaseSetlistDraftsButton" type="button">Supabaseから保存セトリ案をプレビュー読み込み</button>
+            </div>
+          </div>
+          <div class="supabase-sync-note">
+            <strong>setlistDrafts 注意</strong>
+            <span>保存セトリ案は複数件の配列です。今回はアップロードとプレビュー読み込みのみ行います。</span>
+            <span>プレビュー読み込みではlocalStorageの `hooto-draft-setlists` を書き換えません。</span>
+            <span>空配列は上書きリスクがあるため、今回はアップロードしません。</span>
+          </div>
+          <div id="supabaseSetlistDraftsStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">setlistDrafts 未実行</div>
+          <div id="supabaseSetlistDraftsMeta" class="supabase-connection-status is-idle">件数 / revision / updated_at 未取得</div>
+          <pre id="supabaseSetlistDraftsPreview" class="supabase-today-preview" aria-label="setlistDrafts 読み込みプレビュー">読み込みプレビューはまだありません。</pre>
         </div>
       </section>
 
