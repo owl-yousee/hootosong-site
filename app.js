@@ -613,6 +613,121 @@ function setSupabaseTodaySetlistApplyStatus(message,type="idle"){
 function setSupabaseTodaySetlistApplyEnabled(enabled){
   if(els.applySupabaseTodaySetlistButton)els.applySupabaseTodaySetlistButton.disabled=!enabled;
 }
+
+function setBeforeApplyTodaySetlistStatus(message,type="idle"){
+  const status=$("#supabaseTodaySetlistBeforeApplyStatus");
+  if(!status)return;
+  status.textContent=message;
+  status.className="supabase-connection-status is-"+type;
+}
+function setBeforeApplyTodaySetlistRestoreStatus(message,type="idle"){
+  const status=$("#supabaseTodaySetlistRestoreStatus");
+  if(!status)return;
+  status.textContent=message;
+  status.className="supabase-connection-status is-"+type;
+}
+function readBeforeApplyTodaySetlistBackup(){
+  const raw=localStorage.getItem(beforeApplyTodaySetlistStorageKey);
+  if(!raw)return null;
+  try{
+    const parsed=JSON.parse(raw);
+    return parsed&&typeof parsed==="object"?parsed:null;
+  }catch(error){
+    console.warn("HootoSong before-apply todaySetlist backup parse failed:",error);
+    return {parseError:error};
+  }
+}
+function beforeApplyTodaySetlistSongCount(backup){
+  return Array.isArray(backup?.data?.songs)?backup.data.songs.length:0;
+}
+function updateBeforeApplyTodaySetlistRestoreUi(){
+  const backup=readBeforeApplyTodaySetlistBackup();
+  const restoreButton=$("#restoreBeforeApplyTodaySetlistButton");
+  const deleteButton=$("#deleteBeforeApplyTodaySetlistButton");
+  const hasBackup=!!backup&&!backup.parseError;
+  if(restoreButton)restoreButton.disabled=!hasBackup;
+  if(deleteButton)deleteButton.disabled=!hasBackup;
+  if(!backup){
+    setBeforeApplyTodaySetlistStatus("退避データがありません。","idle");
+    return;
+  }
+  if(backup.parseError){
+    setBeforeApplyTodaySetlistStatus("退避データを読み取れません。JSON形式を確認してください。","error");
+    return;
+  }
+  const lines=[
+    "退避データあり",
+    "退避時刻: "+formatSupabaseTimestamp(backup.savedAt),
+    "退避前の曲数: "+beforeApplyTodaySetlistSongCount(backup),
+    "反映元revision: "+(backup.sourceRevision??"未記録"),
+    "反映元updated_at: "+formatSupabaseTimestamp(backup.sourceUpdatedAt),
+    "workspaceId: "+(backup.workspaceId||"未記録")
+  ];
+  setBeforeApplyTodaySetlistStatus(lines.join(" / "),"success");
+}
+function validateBeforeApplyTodaySetlistRestore(){
+  const backup=readBeforeApplyTodaySetlistBackup();
+  if(!backup)throw new Error("退避データがありません。");
+  if(backup.parseError)throw new Error("退避データを読み取れません。");
+  if(!backup.data||typeof backup.data!=="object")throw new Error("退避データに data がありません。");
+  if(!Array.isArray(backup.data.songs))throw new Error("退避データの data.songs が配列ではありません。");
+  if(!backup.data.songs.length)throw new Error("退避データの data.songs が空です。");
+  const missingTitle=backup.data.songs.some(song=>!String(song?.title||"").trim());
+  if(missingTitle)throw new Error("曲名のないデータを含むため復元しません。");
+  const savedWorkspaceId=savedSupabaseWorkspaceId();
+  if(backup.workspaceId&&backup.workspaceId!==savedWorkspaceId)throw new Error("退避データの workspaceId が現在保存済みの workspace_id と一致しません。");
+  const data=normalizeSetlistData(backup.data);
+  if(!data.songs.length)throw new Error("復元できる曲データがありません。");
+  return {backup,data,savedWorkspaceId};
+}
+function restoreBeforeApplyTodaySetlist(){
+  setBeforeApplyTodaySetlistRestoreStatus("復元前チェック中...","checking");
+  try{
+    const {backup,data,savedWorkspaceId}=validateBeforeApplyTodaySetlistRestore();
+    const ok=confirm(
+      "現在の今日のセトリを、反映前に退避した内容へ戻します。よろしいですか？\n\n"+
+      "退避時刻: "+formatSupabaseTimestamp(backup.savedAt)+"\n"+
+      "曲数: "+data.songs.length+"\n"+
+      "反映元revision: "+(backup.sourceRevision??"未記録")+"\n"+
+      "workspaceId: "+(backup.workspaceId||savedWorkspaceId||"未記録")
+    );
+    if(!ok){
+      setBeforeApplyTodaySetlistRestoreStatus("復元をキャンセルしました。","idle");
+      return;
+    }
+    localStorage.setItem(localTodaySetlistStorageKey,JSON.stringify(data));
+    todaySetlist=normalizeSetlistData(data);
+    renderSetlist();
+    render();
+    renderRemoteView();
+    const message="復元成功：反映前の今日のセトリへ戻しました。曲数 "+data.songs.length;
+    setBeforeApplyTodaySetlistRestoreStatus(message,"success");
+    updateBeforeApplyTodaySetlistRestoreUi();
+    console.info("HootoSong before-apply todaySetlist restored:",{songCount:data.songs.length,workspaceId:backup.workspaceId||savedWorkspaceId||"",sourceRevision:backup.sourceRevision??null,sourceUpdatedAt:backup.sourceUpdatedAt||null});
+    showToast("反映前の今日のセトリに戻しました");
+  }catch(error){
+    const message=String(error?.message||error||"不明なエラー");
+    setBeforeApplyTodaySetlistRestoreStatus("復元失敗："+message,"error");
+    console.error("HootoSong before-apply todaySetlist restore failed:",error);
+  }
+}
+function deleteBeforeApplyTodaySetlistBackup(){
+  const backup=readBeforeApplyTodaySetlistBackup();
+  if(!backup||backup.parseError){
+    setBeforeApplyTodaySetlistRestoreStatus("削除できる退避データがありません。","idle");
+    updateBeforeApplyTodaySetlistRestoreUi();
+    return;
+  }
+  const ok=confirm("退避データだけを削除します。今日のセトリ本体は変更しません。よろしいですか？");
+  if(!ok){
+    setBeforeApplyTodaySetlistRestoreStatus("退避データ削除をキャンセルしました。","idle");
+    return;
+  }
+  localStorage.removeItem(beforeApplyTodaySetlistStorageKey);
+  updateBeforeApplyTodaySetlistRestoreUi();
+  setBeforeApplyTodaySetlistRestoreStatus("退避データを削除しました。","success");
+  console.info("HootoSong before-apply todaySetlist backup deleted.");
+}
 let supabaseTestClient=null,supabaseTestClientSignature="";
 const supabaseWorkspaceStorageKey="hootoSong.sync.workspaceId";
 const supabaseUrlStorageKey="hootoSong.sync.supabaseUrl";
@@ -1170,6 +1285,7 @@ function applySupabaseTodaySetlistPreview(){
       data:previousData
     };
     localStorage.setItem(beforeApplyTodaySetlistStorageKey,JSON.stringify(backup));
+    updateBeforeApplyTodaySetlistRestoreUi();
     localStorage.setItem(localTodaySetlistStorageKey,JSON.stringify(data));
     todaySetlist=normalizeSetlistData(data);
     renderSetlist();
@@ -1393,6 +1509,8 @@ els.consumeSupabasePairingCodeButton?.addEventListener("click",consumeSupabasePa
 els.uploadSupabaseTodaySetlistButton?.addEventListener("click",uploadSupabaseTodaySetlist);
 els.previewSupabaseTodaySetlistButton?.addEventListener("click",previewSupabaseTodaySetlist);
 els.applySupabaseTodaySetlistButton?.addEventListener("click",applySupabaseTodaySetlistPreview);
+$("#restoreBeforeApplyTodaySetlistButton")?.addEventListener("click",restoreBeforeApplyTodaySetlist);
+$("#deleteBeforeApplyTodaySetlistButton")?.addEventListener("click",deleteBeforeApplyTodaySetlistBackup);
 $("#exportCsvButton").addEventListener("click",exportSongsCSV);
 $("#openCsvDebugButton")?.addEventListener("click",()=>{els.csvDebugPanel.hidden=false;els.csvDebugPanel.open=true;if(!els.csvDebugContent.innerHTML.trim())els.csvDebugContent.innerHTML='<div class="debug-block"><strong>CSV診断</strong><small>CSVを読み込むと、見出し・状態列・曲ID列の診断結果がここに表示されます。</small></div>';els.csvDebugPanel.scrollIntoView({behavior:"smooth",block:"start"});});
 $("#backupJsonButton").addEventListener("click",exportBackupJSON);
@@ -1403,6 +1521,7 @@ $("#confirmRestore").addEventListener("click",()=>{if(!pendingBackup)return;appl
 els.csv.addEventListener("change",async event=>{const file=event.target.files[0];if(!file)return;try{const imported=parseCSV(await file.text());if(!imported.length)throw new Error("曲名のある行がありません");songs=imported;clearFocusedSong();currentPage=1;saveSongs();rebuildStatuses();render();const debug=globalThis.hootoLastCsvDebug,counts=debug?.finalStatusCounts||{},idWarning=debug?.songIdDuplicateCount>0?" / ⚠ 曲ID重複あり":"";if(debug)renderCsvDebug(debug);showMainTab("settings");if(debug)setTimeout(()=>els.csvDebugPanel.scrollIntoView({behavior:"smooth",block:"start"}),80);showToast(`${songs.length}曲を読み込みました / 状態列 ${debug?.statusHeader||"未検出"} / 曲ID列 ${debug?.hasSongIdColumn?"あり":"なし"} / 歌える ${counts["歌える"]||0} / 練習中 ${counts["練習中"]||0} / 要確認 ${counts["要確認"]||0}${debug?.warning?" / ⚠ 状態列を確認してください":""}${idWarning}`);}catch(error){showToast(`読み込めませんでした：${error.message}`);}event.target.value="";});
 restoreSupabaseConnectionSettings();
 restoreSupabaseWorkspaceState();
+updateBeforeApplyTodaySetlistRestoreUi();
 els.streamDate.value=todayString();
 saveSongs();
 applyTheme(loadTheme());

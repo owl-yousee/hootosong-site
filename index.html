@@ -298,6 +298,19 @@
           <div class="supabase-today-apply">
             <button id="applySupabaseTodaySetlistButton" type="button" disabled>このプレビューを今日のセトリへ反映</button>
             <div id="supabaseTodaySetlistApplyStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">反映未実行</div>
+          <div class="supabase-before-apply-restore" aria-label="todaySetlist反映前退避データの復元">
+            <div class="supabase-sync-note">
+              <strong>反映前退避データ</strong>
+              <span>Supabaseからの手動反映前に退避した、この端末の今日のセトリだけを戻します。</span>
+              <span>復元してもSupabaseへ自動アップロードしません。</span>
+            </div>
+            <div id="supabaseTodaySetlistBeforeApplyStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">退避データ確認中</div>
+            <div class="supabase-today-actions">
+              <button id="restoreBeforeApplyTodaySetlistButton" type="button" disabled>反映前の今日のセトリに戻す</button>
+              <button id="deleteBeforeApplyTodaySetlistButton" type="button" disabled>退避データを削除</button>
+            </div>
+            <div id="supabaseTodaySetlistRestoreStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">復元未実行</div>
+          </div>
           </div>
         </div>
       </section>

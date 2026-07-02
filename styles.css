@@ -379,6 +379,9 @@ button.data-card:hover,label.data-card:hover { color:var(--accent); border-color
 .supabase-connection-status.is-checking { color:var(--accent); border-color:rgba(var(--accent-rgb),.38); }
 .supabase-connection-status.is-success { color:#72d6af; border-color:#72d6af66; background:linear-gradient(145deg,#72d6af14,var(--bg)); }
 .supabase-connection-status.is-error { color:#ff8d9a; border-color:#ff718766; background:linear-gradient(145deg,#ff718714,var(--bg)); }
+.supabase-before-apply-restore { display:grid; gap:10px; margin-top:12px; }
+.supabase-before-apply-restore .supabase-today-actions { justify-content:flex-start; }
+
 .supabase-pairing-panel { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; }
 .supabase-pairing-group { display:grid; gap:8px; align-content:start; min-width:0; padding:12px; background:var(--bg); border:1px solid var(--line); border-radius:12px; }
 .supabase-pairing-group strong,.supabase-pairing-group span,.supabase-pairing-group small { display:block; }
