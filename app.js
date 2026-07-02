@@ -117,6 +117,7 @@ function loadSingLogs(){try{const saved=JSON.parse(localStorage.getItem("hooto-s
 function saveSingLogs(){localStorage.setItem("hooto-sing-logs",JSON.stringify(singLogs));}
 function todayString() { const now=new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`; }
 function normalizeDateString(value){const text=String(value||"").trim();if(!text)return "";const match=text.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);if(match)return `${match[1]}-${match[2].padStart(2,"0")}-${match[3].padStart(2,"0")}`;const date=new Date(text);return Number.isNaN(date.getTime())?text:`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;}
+function formatDateTime(value){if(!value)return "日時なし";const date=new Date(value);if(Number.isNaN(date.getTime()))return String(value||"日時なし");return date.toLocaleString("ja-JP",{dateStyle:"short",timeStyle:"short"});}
 function timeString() { const now=new Date(); return `${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}`; }
 function loadErrorLogs(){try{const logs=JSON.parse(localStorage.getItem(errorLogKey)||"[]");return Array.isArray(logs)?logs.slice(-50):[];}catch(_){return[];}}
 function saveErrorLogs(logs){try{localStorage.setItem(errorLogKey,JSON.stringify(logs.slice(-50)));}catch(_){}}
