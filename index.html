@@ -235,14 +235,14 @@
         </div>
         <div class="supabase-sync-actions">
           <button id="testSupabaseConnectionButton" type="button">接続確認</button>
-          <button id="testSupabaseStateButton" type="button">ログイン後テスト保存</button>
+          <button id="testSupabaseStateButton" type="button">通常版sync_test確認</button>
           <button id="supabaseAnonymousLoginButton" type="button">匿名ログイン</button>
           <button id="createSupabaseWorkspaceButton" type="button">テストworkspace作成</button>
           <button id="verifySupabaseWorkspaceButton" type="button">保存済みworkspace確認</button>
           <button id="clearSupabaseWorkspaceButton" type="button">保存済みworkspace情報を解除</button>
-          <button id="testSupabaseWorkspaceStateButton" type="button">workspace版テスト保存</button>
+          <button id="testSupabaseWorkspaceStateButton" type="button">workspace同期テスト</button>
           <div id="supabaseConnectionStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">未確認</div>
-          <div id="supabaseStateTestStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">sync_test 未実行</div>
+          <div id="supabaseStateTestStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">通常版sync_test 未実行</div>
           <div id="supabaseAuthStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">匿名ログイン未確認</div>
           <div id="supabaseWorkspaceStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">workspace未作成</div>
         </div>
@@ -276,8 +276,8 @@
               <span>PC親機からアップロードし、子機側では読み込み確認だけ行います。</span>
             </div>
             <div class="supabase-today-actions">
-              <button id="uploadSupabaseTodaySetlistButton" type="button">今日のセトリをSupabaseへアップロード</button>
-              <button id="previewSupabaseTodaySetlistButton" type="button">今日のセトリをSupabaseから読み込み確認</button>
+              <button id="uploadSupabaseTodaySetlistButton" type="button">今日のセトリをアップロード</button>
+              <button id="previewSupabaseTodaySetlistButton" type="button">Supabaseからプレビュー読み込み</button>
             </div>
           </div>
           <div class="supabase-sync-note">
@@ -296,7 +296,7 @@
             <span>自動同期ではありません。</span>
           </div>
           <div class="supabase-today-apply">
-            <button id="applySupabaseTodaySetlistButton" type="button" disabled>このプレビューを今日のセトリへ反映</button>
+            <button id="applySupabaseTodaySetlistButton" type="button" disabled>プレビューを今日のセトリへ反映</button>
             <div id="supabaseTodaySetlistApplyStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">反映未実行</div>
           <div class="supabase-before-apply-restore" aria-label="todaySetlist反映前退避データの復元">
             <div class="supabase-sync-note">
@@ -306,7 +306,7 @@
             </div>
             <div id="supabaseTodaySetlistBeforeApplyStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">退避データ確認中</div>
             <div class="supabase-today-actions">
-              <button id="restoreBeforeApplyTodaySetlistButton" type="button" disabled>反映前の今日のセトリに戻す</button>
+              <button id="restoreBeforeApplyTodaySetlistButton" type="button" disabled>反映前データを復元</button>
               <button id="deleteBeforeApplyTodaySetlistButton" type="button" disabled>退避データを削除</button>
             </div>
             <div id="supabaseTodaySetlistRestoreStatus" class="supabase-connection-status is-idle" role="status" aria-live="polite">復元未実行</div>

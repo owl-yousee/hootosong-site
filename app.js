@@ -972,13 +972,13 @@ async function workspaceIdForSupabaseDataSync(client,user){
   throw new Error(message);
 }
 async function testSupabaseStateRoundTrip(){
-  setSupabaseStateTestStatus("sync_test 保存・読み戻し確認中...","checking");
+  setSupabaseStateTestStatus("通常版sync_test 保存・読み戻し確認中...","checking");
   if(els.testSupabaseStateButton)els.testSupabaseStateButton.disabled=true;
   try{
     const client=getSupabaseClientForTest();
     const user=await currentSupabaseTestUser(client);
     if(!user){
-      const message="未ログインです。sync_test の保存・取得には Supabase Auth ログインが必要です。";
+      const message="未ログインです。通常版sync_test の保存・取得には Supabase Auth ログインが必要です。";
       setSupabaseStateTestStatus(message,"error");
       console.warn("HootoSong sync_test skipped:",message);
       return;
@@ -995,11 +995,11 @@ async function testSupabaseStateRoundTrip(){
     const readBack=await client.from("app_state").select("key, value, updated_at, updated_by, revision").eq("owner_id",user.id).eq("key",stateKey).single();
     if(readBack.error)throw readBack.error;
     console.info("HootoSong sync_test saved/read:",readBack.data);
-    setSupabaseStateTestStatus(`テスト成功：sync_test を保存して読み戻しました（revision ${readBack.data?.revision??revision}）`,"success");
+    setSupabaseStateTestStatus(`通常版sync_test成功：保存して読み戻しました（revision ${readBack.data?.revision??revision}）`,"success");
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
     const hint=/permission|policy|rls|jwt|auth|session|unauthorized|forbidden|row-level/i.test(message)?"ログイン状態、RLS、policyを確認してください。":"Supabase URL / public key / app_state を確認してください。";
-    setSupabaseStateTestStatus(`テスト失敗：${hint} ${message}`,"error");
+    setSupabaseStateTestStatus(`通常版sync_test失敗：${hint} ${message}`,"error");
     console.error("HootoSong sync_test failed:",error);
   }finally{
     if(els.testSupabaseStateButton)els.testSupabaseStateButton.disabled=false;
@@ -1302,7 +1302,7 @@ function applySupabaseTodaySetlistPreview(){
   }
 }
 async function testSupabaseWorkspaceStateRoundTrip(){
-  setSupabaseWorkspaceStatus("workspace_sync_test 保存・読み戻し確認中...","checking");
+  setSupabaseWorkspaceStatus("workspace同期テスト中：workspace_sync_test 保存・読み戻し確認中...","checking");
   if(els.testSupabaseWorkspaceStateButton)els.testSupabaseWorkspaceStateButton.disabled=true;
   try{
     const client=getSupabaseClientForTest();
@@ -1326,11 +1326,11 @@ async function testSupabaseWorkspaceStateRoundTrip(){
     const readBack=await client.from("app_workspace_state").select("key, value, updated_at, updated_by, updated_by_label, revision").eq("workspace_id",workspaceId).eq("key",stateKey).single();
     if(readBack.error)throw readBack.error;
     console.info("HootoSong workspace_sync_test saved/read:",readBack.data);
-    setSupabaseWorkspaceStatus("テスト成功：workspace_sync_test を保存して読み戻しました。workspace "+workspaceId+" / revision "+(readBack.data?.revision??revision),"success");
+    setSupabaseWorkspaceStatus("workspace同期テスト成功：workspace_sync_test を保存して読み戻しました。workspace "+workspaceId+" / revision "+(readBack.data?.revision??revision),"success");
   }catch(error){
     const message=String(error?.message||error||"不明なエラー");
     const hint=/permission|policy|rls|jwt|auth|session|unauthorized|forbidden|row-level/i.test(message)?"ログイン状態、workspace member、RLS、policyを確認してください。":"Supabase URL / public key / RPC / app_workspace_state を確認してください。";
-    setSupabaseWorkspaceStatus("workspaceテスト失敗："+hint+" "+message,"error");
+    setSupabaseWorkspaceStatus("workspace同期テスト失敗："+hint+" "+message,"error");
     console.error("HootoSong workspace_sync_test failed:",error);
   }finally{
     if(els.testSupabaseWorkspaceStateButton)els.testSupabaseWorkspaceStateButton.disabled=false;
